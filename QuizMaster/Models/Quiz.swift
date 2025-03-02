@@ -1,29 +1,45 @@
 import Foundation
 
-struct Quiz: Identifiable, Codable {
+struct Quiz: Codable {
     let id: String
     let title: String
     let description: String
-    let category: QuizCategory
-    let difficulty: QuizDifficulty
     let questions: [Question]
-    let timeLimit: Int // in minutes
-    let createdAt: Date
-    let createdBy: String
-    let thumbnail: String?
+    let timeLimit: Int? // Time limit in seconds, optional
+    let difficulty: QuizDifficulty
+    
+    enum QuizDifficulty: String, Codable {
+        case easy
+        case medium
+        case hard
+    }
 }
 
-enum QuizCategory: String, Codable, CaseIterable {
-    case general = "General Knowledge"
-    case science = "Science"
-    case history = "History"
-    case geography = "Geography"
-    case sports = "Sports"
-    case entertainment = "Entertainment"
+struct Question: Codable {
+    let id: String
+    let text: String
+    let options: [QuestionOption]
+    let correctOptionId: String
+    let explanation: String?
+    let points: Int
 }
 
-enum QuizDifficulty: String, Codable, CaseIterable {
-    case easy = "Easy"
-    case medium = "Medium"
-    case hard = "Hard"
+struct QuestionOption: Codable {
+    let id: String
+    let text: String
+}
+
+struct QuizResult: Codable {
+    let quizId: String
+    let score: Int
+    let totalPoints: Int
+    let completedAt: Date
+    let answers: [QuestionAnswer]
+}
+
+struct QuestionAnswer: Codable {
+    let questionId: String
+    let selectedOptionId: String
+    let isCorrect: Bool
+    let timeSpent: TimeInterval
 } 

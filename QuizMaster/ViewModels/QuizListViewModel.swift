@@ -1,50 +1,44 @@
 import Foundation
 import Combine
 
-class QuizListViewModel: ObservableObject {
-    @Published var quizzes: [Quiz] = []
-    @Published var isLoading = false
-    @Published var error: Error?
+class QuizListViewModel {
+    // MARK: - Properties
+    @Published private(set) var quizzes: [Quiz] = []
+    @Published private(set) var isLoading = false
+    @Published private(set) var error: String?
     
-    @Published var selectedCategory: QuizCategory?
-    @Published var selectedDifficulty: QuizDifficulty?
-    @Published var searchText = ""
-    
+    private let networkService: NetworkServiceProtocol
     private var cancellables = Set<AnyCancellable>()
     
-    func loadQuizzes() {
+    // MARK: - Initialization
+    init(networkService: NetworkServiceProtocol = NetworkService()) {
+        self.networkService = networkService
+    }
+    
+    // MARK: - Public Methods
+    func fetchQuizzes() {
         isLoading = true
-        // TODO: Implement API call to fetch quizzes
-        // For now, using mock data
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.quizzes = self.mockQuizzes()
-            self.isLoading = false
-        }
-    }
-    
-    func filteredQuizzes() -> [Quiz] {
-        var filtered = quizzes
+        error = nil
         
-        if let category = selectedCategory {
-            filtered = filtered.filter { $0.category == category }
-        }
-        
-        if let difficulty = selectedDifficulty {
-            filtered = filtered.filter { $0.difficulty == difficulty }
-        }
-        
-        if !searchText.isEmpty {
-            filtered = filtered.filter {
-                $0.title.localizedCaseInsensitiveContains(searchText) ||
-                $0.description.localizedCaseInsensitiveContains(searchText)
+        networkService.fetch(Endpoint.getQuizzes)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] completion in
+                self?.isLoading = false
+                if case .failure(let error) = completion {
+                    self?.error = error.localizedDescription
+                }
+            } receiveValue: { [weak self] (quizzes: [Quiz]) in
+                self?.quizzes = quizzes
             }
-        }
-        
-        return filtered
+            .store(in: &cancellables)
     }
     
-    private func mockQuizzes() -> [Quiz] {
-        // TODO: Replace with actual data
-        return []
+    func selectQuiz(_ quiz: Quiz) {
+        // TODO: Handle quiz selection and navigation
+        print("Selected quiz: \(quiz.title)")
+    }
+    
+    func filterQuizzes(by difficulty: Quiz.QuizDifficulty?) {
+        // TODO: Implement quiz filtering
     }
 } 

@@ -1,5 +1,6 @@
 import UIKit
 import Combine
+import ObjectiveC
 
 class LoginViewController: UIViewController {
     private let viewModel = AuthViewModel()
@@ -148,31 +149,28 @@ class LoginViewController: UIViewController {
         viewModel.$isLoading
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isLoading in
-                if isLoading {
-                    self?.activityIndicator.startAnimating()
-                    self?.loginButton.isEnabled = false
-                } else {
-                    self?.activityIndicator.stopAnimating()
-                    self?.loginButton.isEnabled = true
+                self?.loginButton.isLoading = isLoading
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$currentUser
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] user in
+                if user != nil {
+                    let tabBarController = MainTabBarController()
+                    if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate {
+                        sceneDelegate.window?.rootViewController = tabBarController
+                    }
                 }
             }
             .store(in: &cancellables)
         
         viewModel.$error
             .receive(on: DispatchQueue.main)
-            .compactMap { $0 }
             .sink { [weak self] error in
-                self?.showError(error)
-            }
-            .store(in: &cancellables)
-        
-        viewModel.$currentUser
-            .receive(on: DispatchQueue.main)
-            .compactMap { $0 }
-            .sink { [weak self] user in
-                let tabBarController = MainTabBarController()
-                tabBarController.modalPresentationStyle = .fullScreen
-                self?.present(tabBarController, animated: true)
+                if let error = error {
+                    self?.showErrorAlert(error)
+                }
             }
             .store(in: &cancellables)
     }

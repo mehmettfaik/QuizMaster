@@ -20,16 +20,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
         let window = UIWindow(windowScene: windowScene)
+        self.window = window
         
+        // Kullanıcının giriş durumunu kontrol et
         if Auth.auth().currentUser != nil {
-            let tabBarController = MainTabBarController()
-            window.rootViewController = tabBarController
+            // Kullanıcı giriş yapmışsa TabBarController'ı göster
+            window.rootViewController = MainTabBarController()
         } else {
-            let loginVC = LoginViewController()
-            window.rootViewController = loginVC
+            // Kullanıcı giriş yapmamışsa LoginViewController'ı göster
+            window.rootViewController = LoginViewController()
         }
         
-        self.window = window
         window.makeKeyAndVisible()
     }
 

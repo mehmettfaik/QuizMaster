@@ -1,5 +1,6 @@
 import UIKit
 import Combine
+import ObjectiveC
 
 class RegisterViewController: UIViewController {
     private let viewModel = AuthViewModel()
@@ -138,32 +139,28 @@ class RegisterViewController: UIViewController {
         viewModel.$isLoading
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isLoading in
-                if isLoading {
-                    self?.activityIndicator.startAnimating()
-                    self?.registerButton.isEnabled = false
-                } else {
-                    self?.activityIndicator.stopAnimating()
-                    self?.registerButton.isEnabled = true
+                self?.registerButton.isLoading = isLoading
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$currentUser
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] user in
+                if user != nil {
+                    let tabBarController = MainTabBarController()
+                    if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate {
+                        sceneDelegate.window?.rootViewController = tabBarController
+                    }
                 }
             }
             .store(in: &cancellables)
         
         viewModel.$error
             .receive(on: DispatchQueue.main)
-            .compactMap { $0 }
             .sink { [weak self] error in
-                self?.showError(error)
-            }
-            .store(in: &cancellables)
-        
-        viewModel.$currentUser
-            .receive(on: DispatchQueue.main)
-            .compactMap { $0 }
-            .sink { [weak self] user in
-                // Navigate to main app
-                let homeVC = HomeViewController()
-                homeVC.modalPresentationStyle = .fullScreen
-                self?.present(homeVC, animated: true)
+                if let error = error {
+                    self?.showErrorAlert(error)
+                }
             }
             .store(in: &cancellables)
     }

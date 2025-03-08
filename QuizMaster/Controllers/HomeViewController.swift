@@ -2,13 +2,14 @@ import UIKit
 import Combine
 
 class HomeViewController: UIViewController {
-    private let viewModel = AuthViewModel()
+    private let viewModel = UserViewModel()
     private var cancellables = Set<AnyCancellable>()
     
     private let greetingLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 24, weight: .bold)
         label.textColor = .primaryPurple
+        label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -73,7 +74,13 @@ class HomeViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupCollectionView()
+        setupBindings()
         updateGreeting()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewModel.loadUserProfile()
     }
     
     private func setupUI() {
@@ -123,23 +130,34 @@ class HomeViewController: UIViewController {
         categoriesCollectionView.register(CategoryCell.self, forCellWithReuseIdentifier: "CategoryCell")
     }
     
-    private func updateGreeting() {
+    private func setupBindings() {
+        viewModel.$userName
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] name in
+                self?.updateGreeting(with: name)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updateGreeting(with name: String = "") {
         let hour = Calendar.current.component(.hour, from: Date())
         var greeting = ""
         
         switch hour {
         case 6..<12:
-            greeting = "Good Morning"
+            greeting = "Günaydın"
         case 12..<17:
-            greeting = "Good Afternoon"
+            greeting = "İyi Günler"
         case 17..<22:
-            greeting = "Good Evening"
+            greeting = "İyi Akşamlar"
         default:
-            greeting = "Good Night"
+            greeting = "İyi Geceler"
         }
         
-        if let user = viewModel.currentUser {
-            greetingLabel.text = "\(greeting)\n\(user.name)"
+        if !name.isEmpty {
+            greetingLabel.text = "\(greeting),\n\(name)"
+        } else {
+            greetingLabel.text = greeting
         }
     }
     

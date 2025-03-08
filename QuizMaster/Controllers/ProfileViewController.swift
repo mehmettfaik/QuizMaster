@@ -1,24 +1,29 @@
 import UIKit
 import Combine
 
+// MARK: - UIViewController Extension
+extension UIViewController {
+    func showErrorAlert(_ error: Error) {
+        let alert = UIAlertController(
+            title: "Hata",
+            message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+        present(alert, animated: true)
+    }
+}
+
 class ProfileViewController: UIViewController {
-    private let viewModel = AuthViewModel()
+    private let viewModel = UserViewModel()
     private var cancellables = Set<AnyCancellable>()
     
     private let profileImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
-        imageView.backgroundColor = .backgroundPurple
-        imageView.layer.cornerRadius = 40
         imageView.clipsToBounds = true
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
-    }()
-    
-    private let countryFlagImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "flag_hungary") // Replace with actual flag
-        imageView.contentMode = .scaleAspectFit
+        imageView.backgroundColor = .backgroundPurple
+        imageView.layer.cornerRadius = 50
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
@@ -32,62 +37,43 @@ class ProfileViewController: UIViewController {
         return label
     }()
     
-    private let statsView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .primaryPurple
-        view.layer.cornerRadius = 12
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-    
-    private let pointsLabel: UILabel = {
+    private let emailLabel: UILabel = {
         let label = UILabel()
-        label.text = "POINTS"
-        label.font = .systemFont(ofSize: 12)
-        label.textColor = .white
+        label.font = .systemFont(ofSize: 16)
+        label.textColor = .gray
+        label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
-    private let pointsValueLabel: UILabel = {
-        let label = UILabel()
-        label.text = "590"
-        label.font = .systemFont(ofSize: 20, weight: .bold)
-        label.textColor = .white
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+    private let statsStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.distribution = .fillEqually
+        stack.spacing = 20
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
     }()
     
-    private let rankLabel: UILabel = {
-        let label = UILabel()
-        label.text = "WORLD RANK"
-        label.font = .systemFont(ofSize: 12)
-        label.textColor = .white
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+    private let pointsView = StatView(title: "Points")
+    private let rankView = StatView(title: "World Rank")
+    private let quizzesPlayedView = StatView(title: "Quizzes Played")
     
-    private let rankValueLabel: UILabel = {
-        let label = UILabel()
-        label.text = "#1,438"
-        label.font = .systemFont(ofSize: 20, weight: .bold)
-        label.textColor = .white
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    private let settingsButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "gearshape.fill"), for: .normal)
-        button.tintColor = .primaryPurple
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.color = .primaryPurple
+        indicator.hidesWhenStopped = true
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
     }()
     
     private let signOutButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Sign Out", for: .normal)
-        button.setTitleColor(.red, for: .normal)
+        button.setTitle("Çıkış Yap", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .systemRed
+        button.layer.cornerRadius = 12
+        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -98,80 +84,187 @@ class ProfileViewController: UIViewController {
         setupBindings()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewModel.loadUserProfile()
+    }
+    
     private func setupUI() {
         view.backgroundColor = .white
         
         view.addSubview(profileImageView)
-        view.addSubview(countryFlagImageView)
         view.addSubview(nameLabel)
-        view.addSubview(statsView)
-        view.addSubview(settingsButton)
+        view.addSubview(emailLabel)
+        view.addSubview(statsStackView)
+        view.addSubview(loadingIndicator)
         view.addSubview(signOutButton)
         
-        statsView.addSubview(pointsLabel)
-        statsView.addSubview(pointsValueLabel)
-        statsView.addSubview(rankLabel)
-        statsView.addSubview(rankValueLabel)
+        statsStackView.addArrangedSubview(pointsView)
+        statsStackView.addArrangedSubview(rankView)
+        statsStackView.addArrangedSubview(quizzesPlayedView)
         
         NSLayoutConstraint.activate([
             profileImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             profileImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            profileImageView.widthAnchor.constraint(equalToConstant: 80),
-            profileImageView.heightAnchor.constraint(equalToConstant: 80),
-            
-            countryFlagImageView.topAnchor.constraint(equalTo: profileImageView.bottomAnchor, constant: -20),
-            countryFlagImageView.trailingAnchor.constraint(equalTo: profileImageView.trailingAnchor),
-            countryFlagImageView.widthAnchor.constraint(equalToConstant: 24),
-            countryFlagImageView.heightAnchor.constraint(equalToConstant: 24),
+            profileImageView.widthAnchor.constraint(equalToConstant: 100),
+            profileImageView.heightAnchor.constraint(equalToConstant: 100),
             
             nameLabel.topAnchor.constraint(equalTo: profileImageView.bottomAnchor, constant: 16),
-            nameLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            nameLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            nameLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
-            statsView.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 20),
-            statsView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            statsView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            statsView.heightAnchor.constraint(equalToConstant: 80),
+            emailLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8),
+            emailLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            emailLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
-            pointsLabel.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
-            pointsLabel.centerYAnchor.constraint(equalTo: statsView.centerYAnchor, constant: -12),
-            
-            pointsValueLabel.leadingAnchor.constraint(equalTo: pointsLabel.leadingAnchor),
-            pointsValueLabel.topAnchor.constraint(equalTo: pointsLabel.bottomAnchor, constant: 4),
-            
-            rankLabel.trailingAnchor.constraint(equalTo: statsView.trailingAnchor, constant: -20),
-            rankLabel.centerYAnchor.constraint(equalTo: statsView.centerYAnchor, constant: -12),
-            
-            rankValueLabel.trailingAnchor.constraint(equalTo: rankLabel.trailingAnchor),
-            rankValueLabel.topAnchor.constraint(equalTo: rankLabel.bottomAnchor, constant: 4),
-            
-            settingsButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            settingsButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            settingsButton.widthAnchor.constraint(equalToConstant: 44),
-            settingsButton.heightAnchor.constraint(equalToConstant: 44),
+            statsStackView.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 32),
+            statsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            statsStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
             signOutButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
-            signOutButton.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+            signOutButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+            signOutButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            signOutButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
         
+        // Profil fotoğrafı için placeholder
+        profileImageView.image = UIImage(systemName: "person.circle.fill")
+        profileImageView.tintColor = .primaryPurple
+        
+        // Sign Out action
         signOutButton.addTarget(self, action: #selector(signOutTapped), for: .touchUpInside)
     }
     
     private func setupBindings() {
-        viewModel.$currentUser
+        viewModel.$isLoading
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] user in
-                if let user = user {
-                    self?.nameLabel.text = user.name
-                    // Update other user data
+            .sink { [weak self] isLoading in
+                if isLoading {
+                    self?.loadingIndicator.startAnimating()
+                } else {
+                    self?.loadingIndicator.stopAnimating()
+                }
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$userName
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] name in
+                self?.nameLabel.text = name
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$userEmail
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] email in
+                self?.emailLabel.text = email
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$totalPoints
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] points in
+                self?.pointsView.setValue("\(points)")
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$worldRank
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] rank in
+                self?.rankView.setValue("#\(rank)")
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$quizzesPlayed
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] count in
+                self?.quizzesPlayedView.setValue("\(count)")
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$error
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] error in
+                if let error = error {
+                    self?.showErrorAlert(error)
                 }
             }
             .store(in: &cancellables)
     }
     
     @objc private func signOutTapped() {
-        viewModel.signOut()
-        let loginVC = LoginViewController()
-        loginVC.modalPresentationStyle = .fullScreen
-        present(loginVC, animated: true)
+        let alert = UIAlertController(
+            title: "Çıkış Yap",
+            message: "Çıkış yapmak istediğinize emin misiniz?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "İptal", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Çıkış Yap", style: .destructive) { [weak self] _ in
+            self?.viewModel.signOut()
+            let loginVC = LoginViewController()
+            loginVC.modalPresentationStyle = .fullScreen
+            self?.present(loginVC, animated: true)
+        })
+        
+        present(alert, animated: true)
+    }
+}
+
+// MARK: - Stat View
+class StatView: UIView {
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14)
+        label.textColor = .gray
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let valueLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 24, weight: .bold)
+        label.textColor = .primaryPurple
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    init(title: String) {
+        super.init(frame: .zero)
+        titleLabel.text = title
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupUI() {
+        backgroundColor = .backgroundPurple
+        layer.cornerRadius = 12
+        
+        addSubview(titleLabel)
+        addSubview(valueLabel)
+        
+        NSLayoutConstraint.activate([
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 12),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            
+            valueLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+            valueLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            valueLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            valueLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12)
+        ])
+    }
+    
+    
+    func setValue(_ value: String) {
+        valueLabel.text = value
     }
 } 

@@ -1,6 +1,10 @@
 import UIKit
+import Combine
 
 class StatsViewController: UIViewController {
+    private let viewModel = UserViewModel()
+    private var cancellables = Set<AnyCancellable>()
+    
     private let headerView: UIView = {
         let view = UIView()
         view.backgroundColor = .primaryPurple
@@ -11,17 +15,19 @@ class StatsViewController: UIViewController {
     private let pointsLabel: UILabel = {
         let label = UILabel()
         label.text = "POINTS"
-        label.textColor = .white
         label.font = .systemFont(ofSize: 14)
+        label.textColor = .white
+        label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
     private let pointsValueLabel: UILabel = {
         let label = UILabel()
-        label.text = "590"
+        label.text = "0"
+        label.font = .systemFont(ofSize: 32, weight: .bold)
         label.textColor = .white
-        label.font = .systemFont(ofSize: 24, weight: .bold)
+        label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -29,19 +35,29 @@ class StatsViewController: UIViewController {
     private let rankLabel: UILabel = {
         let label = UILabel()
         label.text = "WORLD RANK"
-        label.textColor = .white
         label.font = .systemFont(ofSize: 14)
+        label.textColor = .white
+        label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
     private let rankValueLabel: UILabel = {
         let label = UILabel()
-        label.text = "#1,438"
+        label.text = "#0"
+        label.font = .systemFont(ofSize: 32, weight: .bold)
         label.textColor = .white
-        label.font = .systemFont(ofSize: 24, weight: .bold)
+        label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
+    }()
+    
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.color = .white
+        indicator.hidesWhenStopped = true
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
     }()
     
     private let segmentedControl: UISegmentedControl = {
@@ -114,6 +130,12 @@ class StatsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupBindings()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewModel.loadUserProfile()
     }
     
     private func setupUI() {
@@ -124,6 +146,7 @@ class StatsViewController: UIViewController {
         headerView.addSubview(pointsValueLabel)
         headerView.addSubview(rankLabel)
         headerView.addSubview(rankValueLabel)
+        headerView.addSubview(loadingIndicator)
         
         view.addSubview(segmentedControl)
         view.addSubview(statsView)
@@ -187,6 +210,42 @@ class StatsViewController: UIViewController {
             statsStackView.trailingAnchor.constraint(equalTo: statsView.trailingAnchor, constant: -20),
             statsStackView.heightAnchor.constraint(equalToConstant: 80)
         ])
+    }
+    
+    private func setupBindings() {
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                if isLoading {
+                    self?.loadingIndicator.startAnimating()
+                } else {
+                    self?.loadingIndicator.stopAnimating()
+                }
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$totalPoints
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] points in
+                self?.pointsValueLabel.text = "\(points)"
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$worldRank
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] rank in
+                self?.rankValueLabel.text = "#\(rank)"
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$error
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] error in
+                if let error = error {
+                    self?.showErrorAlert(error)
+                }
+            }
+            .store(in: &cancellables)
     }
     
     private func createStatItem(value: String, title: String) -> UIView {

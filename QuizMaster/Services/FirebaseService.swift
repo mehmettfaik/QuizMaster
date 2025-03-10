@@ -3,6 +3,7 @@ import Firebase
 import FirebaseAuth
 import FirebaseFirestore
 import FirebaseStorage
+import GoogleSignIn
 
 class FirebaseService {
     static let shared = FirebaseService()
@@ -66,6 +67,84 @@ class FirebaseService {
         try auth.signOut()
     }
     
+    func signInWithGoogle(presenting: UIViewController, completion: @escaping (Result<User, Error>) -> Void) {
+        guard let clientID = FirebaseApp.app()?.options.clientID else { return }
+        
+        let config = GIDConfiguration(clientID: clientID)
+        GIDSignIn.sharedInstance.configuration = config
+        
+        GIDSignIn.sharedInstance.signIn(withPresenting: presenting) { [weak self] result, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let authentication = result?.user,
+                  let idToken = authentication.idToken?.tokenString else {
+                let error = NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Google authentication failed"])
+                completion(.failure(error))
+                return
+            }
+            
+            let credential = GoogleAuthProvider.credential(withIDToken: idToken,
+                                                         accessToken: authentication.accessToken.tokenString)
+            
+            self?.auth.signIn(with: credential) { [weak self] result, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                guard let userId = result?.user.uid else {
+                    completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "User ID not found"])))
+                    return
+                }
+                
+                // Check if user exists
+                self?.db.collection("users").document(userId).getDocument { [weak self] snapshot, error in
+                    if let error = error {
+                        completion(.failure(error))
+                        return
+                    }
+                    
+                    if let snapshot = snapshot, snapshot.exists == true {
+                        // User exists, get data
+                        self?.getUser(userId: userId, completion: completion)
+                    } else {
+                        // New user, create profile
+                        let userData: [String: Any] = [
+                            "email": authentication.profile?.email ?? "",
+                            "name": authentication.profile?.name ?? "",
+                            "total_points": 0,
+                            "quizzes_played": 0,
+                            "quizzes_won": 0,
+                            "language": "en"
+                        ]
+                        
+                        self?.db.collection("users").document(userId).setData(userData) { error in
+                            if let error = error {
+                                completion(.failure(error))
+                                return
+                            }
+                            
+                            let user = User(
+                                id: userId,
+                                email: authentication.profile?.email ?? "",
+                                name: authentication.profile?.name ?? "",
+                                photoURL: authentication.profile?.imageURL(withDimension: 200),
+                                totalPoints: 0,
+                                quizzesPlayed: 0,
+                                quizzesWon: 0,
+                                language: "en"
+                            )
+                            completion(.success(user))
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     // MARK: - User Operations
     func getUser(userId: String, completion: @escaping (Result<User, Error>) -> Void) {
         db.collection("users").document(userId).getDocument { snapshot, error in
@@ -74,7 +153,7 @@ class FirebaseService {
                 return
             }
             
-            guard let snapshot = snapshot, let user = User.from(snapshot) else {
+            guard let snapshot = snapshot, snapshot.exists == true, let user = User.from(snapshot) else {
                 completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not found"])))
                 return
             }

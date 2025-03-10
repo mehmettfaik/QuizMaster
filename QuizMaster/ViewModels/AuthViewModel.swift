@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UIKit
 
 class AuthViewModel {
     @Published var currentUser: User?
@@ -29,6 +30,21 @@ class AuthViewModel {
         error = nil
         
         firebaseService.signIn(email: email, password: password) { [weak self] result in
+            self?.isLoading = false
+            switch result {
+            case .success(let user):
+                self?.currentUser = user
+            case .failure(let error):
+                self?.error = error
+            }
+        }
+    }
+    
+    func signInWithGoogle(presenting: UIViewController) {
+        isLoading = true
+        error = nil
+        
+        firebaseService.signInWithGoogle(presenting: presenting) { [weak self] result in
             self?.isLoading = false
             switch result {
             case .success(let user):

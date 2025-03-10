@@ -5,7 +5,7 @@ struct User: Codable {
     let id: String
     var email: String
     var name: String
-    var photoURL: String?
+    var photoURL: URL?
     var totalPoints: Int
     var quizzesPlayed: Int
     var quizzesWon: Int
@@ -28,7 +28,7 @@ struct User: Codable {
             id: document.documentID,
             email: data["email"] as? String ?? "",
             name: data["name"] as? String ?? "",
-            photoURL: data["photoURL"] as? String,
+            photoURL: URL(string: data["photoURL"] as? String ?? ""),
             totalPoints: data["total_points"] as? Int ?? 0,
             quizzesPlayed: data["quizzes_played"] as? Int ?? 0,
             quizzesWon: data["quizzes_won"] as? Int ?? 0,

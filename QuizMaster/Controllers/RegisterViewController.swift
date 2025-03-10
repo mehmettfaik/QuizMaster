@@ -77,6 +77,21 @@ class RegisterViewController: UIViewController {
         return button
     }()
     
+    private let googleSignInButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Google ile Kayıt Ol", for: .normal)
+        button.setImage(UIImage(named: "google_logo")?.withRenderingMode(.alwaysOriginal), for: .normal)
+        button.backgroundColor = .white
+        button.setTitleColor(.black, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        button.layer.cornerRadius = 8
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.systemGray4.cgColor
+        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -8, bottom: 0, right: 0)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
     private let activityIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
         indicator.color = .primaryPurple
@@ -102,6 +117,7 @@ class RegisterViewController: UIViewController {
         view.addSubview(passwordTextField)
         view.addSubview(registerButton)
         view.addSubview(backButton)
+        view.addSubview(googleSignInButton)
         view.addSubview(activityIndicator)
         
         NSLayoutConstraint.activate([
@@ -141,12 +157,18 @@ class RegisterViewController: UIViewController {
             backButton.topAnchor.constraint(equalTo: registerButton.bottomAnchor, constant: 20),
             backButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
+            googleSignInButton.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 30),
+            googleSignInButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            googleSignInButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            googleSignInButton.heightAnchor.constraint(equalToConstant: 50),
+            
             activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
         
         registerButton.addTarget(self, action: #selector(registerButtonTapped), for: .touchUpInside)
         backButton.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
+        googleSignInButton.addTarget(self, action: #selector(googleSignInButtonTapped), for: .touchUpInside)
     }
     
     private func setupBindings() {
@@ -204,5 +226,9 @@ class RegisterViewController: UIViewController {
     
     @objc private func backButtonTapped() {
         dismiss(animated: true)
+    }
+    
+    @objc private func googleSignInButtonTapped() {
+        viewModel.signInWithGoogle(presenting: self)
     }
 } 

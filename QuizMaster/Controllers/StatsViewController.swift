@@ -169,6 +169,9 @@ class StatsViewController: UIViewController {
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 120),
             
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            
             pointsLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
             pointsLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             

@@ -14,6 +14,16 @@ class RegisterViewController: UIViewController {
         return imageView
     }()
     
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Quiz Master"
+        label.font = .systemFont(ofSize: 32, weight: .bold)
+        label.textColor = .primaryPurple
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
     private let nameTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "Ad"
@@ -85,6 +95,7 @@ class RegisterViewController: UIViewController {
         view.backgroundColor = .white
         
         view.addSubview(logoImageView)
+        view.addSubview(titleLabel)
         view.addSubview(nameTextField)
         view.addSubview(surnameTextField)
         view.addSubview(emailTextField)
@@ -99,7 +110,10 @@ class RegisterViewController: UIViewController {
             logoImageView.widthAnchor.constraint(equalToConstant: 150),
             logoImageView.heightAnchor.constraint(equalToConstant: 150),
             
-            nameTextField.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: 50),
+            titleLabel.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: 20),
+            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            
+            nameTextField.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 50),
             nameTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             nameTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             nameTextField.heightAnchor.constraint(equalToConstant: 50),

@@ -113,7 +113,7 @@ class CategoryCell: UICollectionViewCell {
     
     private func applyModernStyle() {
         backgroundColor = .clear
-        containerView.backgroundColor = .white
+        containerView.backgroundColor = .backgroundPurple
         containerView.layer.cornerRadius = 16
         
         iconLabel.isHidden = true

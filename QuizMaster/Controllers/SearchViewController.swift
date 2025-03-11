@@ -9,14 +9,15 @@ class SearchViewController: UIViewController {
         ("Science", "🔬"),
         ("Sports", "⚽️"),
         ("History", "📚"),
-        ("Art", "🎨")
+        ("Art", "🎨"),
+        ("Celebrity", "⭐️")
     ]
     
     private let searchBar: UISearchBar = {
         let searchBar = UISearchBar()
         searchBar.placeholder = "Search..."
         searchBar.searchBarStyle = .minimal
-        searchBar.backgroundColor = .systemGray6
+        searchBar.backgroundColor = .white
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         return searchBar
     }()
@@ -26,7 +27,7 @@ class SearchViewController: UIViewController {
         let control = UISegmentedControl(items: items)
         control.selectedSegmentIndex = 0
         control.selectedSegmentTintColor = .primaryPurple
-        control.backgroundColor = .systemGray6
+        control.backgroundColor = .white
         control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
         control.setTitleTextAttributes([.foregroundColor: UIColor.primaryPurple], for: .normal)
         control.translatesAutoresizingMaskIntoConstraints = false
@@ -40,7 +41,7 @@ class SearchViewController: UIViewController {
         layout.minimumInteritemSpacing = 16
         layout.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.backgroundColor = .systemGray6
+        collectionView.backgroundColor = .white
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         return collectionView
     }()

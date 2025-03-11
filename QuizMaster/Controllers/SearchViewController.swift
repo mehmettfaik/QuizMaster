@@ -13,6 +13,9 @@ class SearchViewController: UIViewController {
         ("Celebrity", "⭐️")
     ]
     
+    private var filteredCategories: [(title: String, icon: String)] = []
+    private var isSearching: Bool = false
+    
     private let searchBar: UISearchBar = {
         let searchBar = UISearchBar()
         searchBar.placeholder = "Search..."
@@ -53,6 +56,9 @@ class SearchViewController: UIViewController {
         setupSearchBar()
         setupViewModel()
         setupSegmentedControl()
+        
+        // Başlangıçta tüm kategorileri göster
+        filteredCategories = categories
     }
     
     private func setupUI() {
@@ -105,19 +111,56 @@ class SearchViewController: UIViewController {
     }
     
     @objc private func segmentedControlValueChanged() {
+        // Segment değiştiğinde search bar'ı temizle ve filtreyi sıfırla
+        searchBar.text = ""
+        isSearching = false
+        
+        if segmentedControl.selectedSegmentIndex == 2 {
+            // Categories seçiliyse tüm kategorileri göster
+            filteredCategories = categories
+        } else {
+            // Diğer segmentler seçiliyse filtrelenmiş kategorileri temizle
+            filteredCategories = []
+        }
+        
+        collectionView.reloadData()
+    }
+    
+    private func filterCategories(with searchText: String) {
+        if searchText.isEmpty {
+            filteredCategories = categories
+            isSearching = false
+        } else {
+            isSearching = true
+            filteredCategories = categories.filter {
+                $0.title.lowercased().contains(searchText.lowercased())
+            }
+        }
         collectionView.reloadData()
     }
 }
 
 extension SearchViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return segmentedControl.selectedSegmentIndex == 2 ? categories.count : 0
+        if segmentedControl.selectedSegmentIndex == 2 {
+            return filteredCategories.isEmpty && isSearching ? 1 : filteredCategories.count
+        }
+        return 0
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CategoryCell", for: indexPath) as! CategoryCell
-        let category = categories[indexPath.item]
-        cell.configure(title: category.title, icon: category.icon, style: .modern)
+        
+        if segmentedControl.selectedSegmentIndex == 2 {
+            if filteredCategories.isEmpty && isSearching {
+                // Sonuç bulunamadığında gösterilecek hücre
+//                cell.configure(title: "No results found", icon: "❌", style: .modern)
+            } else {
+                let category = filteredCategories[indexPath.item]
+                cell.configure(title: category.title, icon: category.icon, style: .modern)
+            }
+        }
+        
         return cell
     }
     
@@ -136,8 +179,17 @@ extension SearchViewController: UICollectionViewDelegate, UICollectionViewDataSo
 
 extension SearchViewController: UISearchBarDelegate {
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        if segmentedControl.selectedSegmentIndex == 1 {
+        switch segmentedControl.selectedSegmentIndex {
+        case 1: // Quiz
             quizListViewModel.fetchQuizzes(searchText: searchText)
+        case 2: // Categories
+            filterCategories(with: searchText)
+        default:
+            break
         }
+    }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
     }
 } 

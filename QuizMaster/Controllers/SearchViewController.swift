@@ -1,19 +1,32 @@
 import UIKit
+import FirebaseFirestore
 
 class SearchViewController: UIViewController {
+    private let quizListViewModel = QuizListViewModel()
+    
+    private let categories: [(title: String, icon: String)] = [
+        ("Vehicle", "🚗"),
+        ("Science", "🔬"),
+        ("Sports", "⚽️"),
+        ("History", "📚"),
+        ("Art", "🎨")
+    ]
+    
     private let searchBar: UISearchBar = {
         let searchBar = UISearchBar()
-        searchBar.placeholder = "Ma|"
+        searchBar.placeholder = "Search..."
         searchBar.searchBarStyle = .minimal
+        searchBar.backgroundColor = .systemGray6
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         return searchBar
     }()
     
     private let segmentedControl: UISegmentedControl = {
-        let items = ["Top", "Quiz", "Categories", "Friends"]
+        let items = ["Favorite", "Quiz", "Categories", "Friends"]
         let control = UISegmentedControl(items: items)
         control.selectedSegmentIndex = 0
         control.selectedSegmentTintColor = .primaryPurple
+        control.backgroundColor = .systemGray6
         control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
         control.setTitleTextAttributes([.foregroundColor: UIColor.primaryPurple], for: .normal)
         control.translatesAutoresizingMaskIntoConstraints = false
@@ -25,8 +38,9 @@ class SearchViewController: UIViewController {
         layout.scrollDirection = .vertical
         layout.minimumLineSpacing = 16
         layout.minimumInteritemSpacing = 16
+        layout.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.backgroundColor = .clear
+        collectionView.backgroundColor = .systemGray6
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         return collectionView
     }()
@@ -35,6 +49,9 @@ class SearchViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupCollectionView()
+        setupSearchBar()
+        setupViewModel()
+        setupSegmentedControl()
     }
     
     private func setupUI() {
@@ -45,7 +62,7 @@ class SearchViewController: UIViewController {
         view.addSubview(collectionView)
         
         NSLayoutConstraint.activate([
-            searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
@@ -54,8 +71,8 @@ class SearchViewController: UIViewController {
             segmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
             collectionView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 16),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
@@ -63,85 +80,63 @@ class SearchViewController: UIViewController {
     private func setupCollectionView() {
         collectionView.delegate = self
         collectionView.dataSource = self
-        collectionView.register(QuizCell.self, forCellWithReuseIdentifier: "QuizCell")
+        collectionView.register(CategoryCell.self, forCellWithReuseIdentifier: "CategoryCell")
+    }
+    
+    private func setupSearchBar() {
+        searchBar.delegate = self
+    }
+    
+    private func setupViewModel() {
+        quizListViewModel.onQuizzesUpdated = { [weak self] in
+            DispatchQueue.main.async {
+                self?.collectionView.reloadData()
+            }
+        }
+        
+        quizListViewModel.onError = { [weak self] error in
+            print("Error fetching quizzes: \(error.localizedDescription)")
+        }
+    }
+    
+    private func setupSegmentedControl() {
+        segmentedControl.addTarget(self, action: #selector(segmentedControlValueChanged), for: .valueChanged)
+    }
+    
+    @objc private func segmentedControlValueChanged() {
+        collectionView.reloadData()
     }
 }
 
 extension SearchViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 3 // Sample data
+        return segmentedControl.selectedSegmentIndex == 2 ? categories.count : 0
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "QuizCell", for: indexPath) as! QuizCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CategoryCell", for: indexPath) as! CategoryCell
+        let category = categories[indexPath.item]
+        cell.configure(title: category.title, icon: category.icon, style: .modern)
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = collectionView.bounds.width - 32
-        return CGSize(width: width, height: 80)
+        let width = collectionView.bounds.width - 32 // Full width minus padding
+        return CGSize(width: width, height: 120) // Daha yüksek bir hücre
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let category = categories[indexPath.item]
+        let difficultyVC = DifficultyViewController(category: category.title)
+        difficultyVC.modalPresentationStyle = .fullScreen
+        present(difficultyVC, animated: true)
     }
 }
 
-class QuizCell: UICollectionViewCell {
-    private let iconView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
-        imageView.backgroundColor = .backgroundPurple
-        imageView.layer.cornerRadius = 8
-        imageView.clipsToBounds = true
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
-    }()
-    
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .medium)
-        label.text = "Statistics Math Quiz"
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    private let subtitleLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 14)
-        label.textColor = .gray
-        label.text = "Math • 12 Quizzes"
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupUI() {
-        backgroundColor = .white
-        layer.cornerRadius = 12
-        addShadow()
-        
-        contentView.addSubview(iconView)
-        contentView.addSubview(titleLabel)
-        contentView.addSubview(subtitleLabel)
-        
-        NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            iconView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: 48),
-            iconView.heightAnchor.constraint(equalToConstant: 48),
-            
-            titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 16),
-            titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            
-            subtitleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 16),
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            subtitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
-        ])
+extension SearchViewController: UISearchBarDelegate {
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if segmentedControl.selectedSegmentIndex == 1 {
+            quizListViewModel.fetchQuizzes(searchText: searchText)
+        }
     }
 } 

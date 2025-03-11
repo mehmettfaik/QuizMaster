@@ -60,16 +60,16 @@ class StatsViewController: UIViewController {
         return indicator
     }()
     
-    private let segmentedControl: UISegmentedControl = {
-        let items = ["Badge", "Stats", "Details"]
-        let control = UISegmentedControl(items: items)
-        control.selectedSegmentIndex = 1
-        control.selectedSegmentTintColor = .primaryPurple
-        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
-        control.setTitleTextAttributes([.foregroundColor: UIColor.primaryPurple], for: .normal)
-        control.translatesAutoresizingMaskIntoConstraints = false
-        return control
-    }()
+   // private let segmentedControl: UISegmentedControl = {
+     //   let items = ["Badge", "Stats", "Details"]
+       // let control = UISegmentedControl(items: items)
+        //control.selectedSegmentIndex = 1
+        //control.selectedSegmentTintColor = .primaryPurple
+        //control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        //control.setTitleTextAttributes([.foregroundColor: UIColor.primaryPurple], for: .normal)
+        //control.translatesAutoresizingMaskIntoConstraints = false
+        //return control
+    //}()
     
     private let statsView: UIView = {
         let view = UIView()
@@ -148,7 +148,7 @@ class StatsViewController: UIViewController {
         headerView.addSubview(rankValueLabel)
         headerView.addSubview(loadingIndicator)
         
-        view.addSubview(segmentedControl)
+        //view.addSubview(segmentedControl)
         view.addSubview(statsView)
         
         statsView.addSubview(periodControl)
@@ -184,11 +184,11 @@ class StatsViewController: UIViewController {
             rankValueLabel.trailingAnchor.constraint(equalTo: rankLabel.trailingAnchor),
             rankValueLabel.topAnchor.constraint(equalTo: rankLabel.bottomAnchor, constant: 4),
             
-            segmentedControl.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 20),
-            segmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            segmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+           // segmentedControl.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 20),
+           // segmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+           // segmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
-            statsView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 20),
+            statsView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 20),
             statsView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             statsView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             statsView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),

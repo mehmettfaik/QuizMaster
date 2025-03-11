@@ -174,12 +174,13 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CategoryCell", for: indexPath) as! CategoryCell
         let category = categories[indexPath.item]
-        cell.configure(title: category.title, icon: category.icon)
+        cell.configure(title: category.title, icon: category.icon, style: .classic)
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = (collectionView.bounds.width - 16) / 2
+       // let spacing: CGFloat = 16
+        let width = (collectionView.bounds.width - 16 ) / 2 // 32 is the total horizontal padding
         return CGSize(width: width, height: width)
     }
     
@@ -188,60 +189,5 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
         let difficultyVC = DifficultyViewController(category: category.title)
         difficultyVC.modalPresentationStyle = .fullScreen
         present(difficultyVC, animated: true)
-    }
-}
-
-class CategoryCell: UICollectionViewCell {
-    private let iconLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 40)
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .medium)
-        label.textAlignment = .center
-        label.textColor = .black
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupUI() {
-        backgroundColor = .backgroundPurple
-        layer.cornerRadius = 12
-        
-        contentView.addSubview(iconLabel)
-        contentView.addSubview(titleLabel)
-        
-        NSLayoutConstraint.activate([
-            iconLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            iconLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor, constant: -10),
-            
-            titleLabel.topAnchor.constraint(equalTo: iconLabel.bottomAnchor, constant: 8),
-            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
-        ])
-    }
-    
-    func configure(title: String, icon: String) {
-        titleLabel.text = title
-        iconLabel.text = icon
-    }
-    
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        addShadow()
     }
 } 

@@ -196,7 +196,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
                     tabBarController.selectedIndex = 1
                     // Get reference to SearchViewController and update its state
                     if let searchVC = tabBarController.selectedViewController as? SearchViewController {
-                        searchVC.segmentedControl.selectedSegmentIndex = 2
+                        searchVC.segmentedControl.selectedSegmentIndex = 0
                         searchVC.segmentedControlValueChanged()
                     }
                 }

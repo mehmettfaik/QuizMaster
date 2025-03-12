@@ -25,9 +25,10 @@ class SearchViewController: UIViewController {
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         return searchBar
     }()
+  
     
     public let segmentedControl: UISegmentedControl = {
-        let items = ["Favorite", "Quiz", "Categories", "Friends"]
+        let items = ["Categories", "Favorites", "Top Quiz"]
         let control = UISegmentedControl(items: items)
         control.selectedSegmentIndex = 0
         control.selectedSegmentTintColor = .primaryPurple
@@ -116,20 +117,46 @@ class SearchViewController: UIViewController {
         segmentedControl.addTarget(self, action: #selector(segmentedControlValueChanged), for: .valueChanged)
     }
     
-    @objc public func segmentedControlValueChanged() {
-        searchBar.text = ""
-        isSearching = false
-        
-        switch segmentedControl.selectedSegmentIndex {
-        case 0: // Favorites
-            filteredCategories = categories.filter { favoriteCategories.contains($0.title) }
-        case 2: // Categories
-            filteredCategories = categories
-        default:
-            filteredCategories = []
+    private func filterCategories(with searchText: String) {
+        if searchText.isEmpty {
+            switch segmentedControl.selectedSegmentIndex {
+            case 0: // Categories
+                filteredCategories = categories
+            case 1: // Favorites
+                filteredCategories = categories.filter { favoriteCategories.contains($0.title) }
+            case 2: // Top Quiz
+                quizListViewModel.fetchQuizzes(searchText: searchText)
+                filteredCategories = []
+            default:
+                filteredCategories = []
+            }
+            isSearching = false
+        } else {
+            isSearching = true
+            switch segmentedControl.selectedSegmentIndex {
+            case 0: // Categories
+                filteredCategories = categories.filter { category in
+                    category.title.lowercased().contains(searchText.lowercased())
+                }
+            case 1: // Favorites
+                filteredCategories = categories.filter { category in
+                    favoriteCategories.contains(category.title) &&
+                    category.title.lowercased().contains(searchText.lowercased())
+                }
+            case 2: // Top Quiz
+                quizListViewModel.fetchQuizzes(searchText: searchText)
+                filteredCategories = []
+            default:
+                filteredCategories = []
+            }
         }
-        
         collectionView.reloadData()
+    }
+    
+    @objc public func segmentedControlValueChanged() {
+        // Segment değiştiğinde mevcut search text'i kullanarak filtrele
+        let currentSearchText = searchBar.text ?? ""
+        filterCategories(with: currentSearchText)
     }
     
     private func toggleFavorite(for category: String) {
@@ -143,30 +170,17 @@ class SearchViewController: UIViewController {
         UserDefaults.standard.set(Array(favoriteCategories), forKey: "FavoriteCategories")
         
         // Reload collection view if we're in favorites tab
-        if segmentedControl.selectedSegmentIndex == 0 {
+        if segmentedControl.selectedSegmentIndex == 1 {
             segmentedControlValueChanged()
         } else {
             collectionView.reloadData()
         }
     }
-    
-    private func filterCategories(with searchText: String) {
-        if searchText.isEmpty {
-            filteredCategories = categories
-            isSearching = false
-        } else {
-            isSearching = true
-            filteredCategories = categories.filter {
-                $0.title.lowercased().contains(searchText.lowercased())
-            }
-        }
-        collectionView.reloadData()
-    }
 }
 
 extension SearchViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if segmentedControl.selectedSegmentIndex == 2 || segmentedControl.selectedSegmentIndex == 0 {
+        if segmentedControl.selectedSegmentIndex == 0 || segmentedControl.selectedSegmentIndex == 1 {
             return filteredCategories.isEmpty && isSearching ? 1 : filteredCategories.count
         }
         return 0
@@ -175,7 +189,7 @@ extension SearchViewController: UICollectionViewDelegate, UICollectionViewDataSo
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CategoryCell", for: indexPath) as! CategoryCell
         
-        if segmentedControl.selectedSegmentIndex == 2 || segmentedControl.selectedSegmentIndex == 0 {
+        if segmentedControl.selectedSegmentIndex == 0 || segmentedControl.selectedSegmentIndex == 1 {
             if filteredCategories.isEmpty && isSearching {
                 cell.configure(title: "No results found", icon: "❌", style: .modern)
             } else {
@@ -209,14 +223,7 @@ extension SearchViewController: UICollectionViewDelegate, UICollectionViewDataSo
 
 extension SearchViewController: UISearchBarDelegate {
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        switch segmentedControl.selectedSegmentIndex {
-        case 1: // Quiz
-            quizListViewModel.fetchQuizzes(searchText: searchText)
-        case 2: // Categories
-            filterCategories(with: searchText)
-        default:
-            break
-        }
+        filterCategories(with: searchText)
     }
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {

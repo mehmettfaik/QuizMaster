@@ -14,6 +14,7 @@
 		3575AB422D7BA3C70094DFAA /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 3575AB412D7BA3C70094DFAA /* FirebaseFirestore */; };
 		3575AB442D7BA3C70094DFAA /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 3575AB432D7BA3C70094DFAA /* FirebaseMessaging */; };
 		3575AB462D7BA3C70094DFAA /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 3575AB452D7BA3C70094DFAA /* FirebaseStorage */; };
+		35D0A09E2D82525500381CAB /* DGCharts in Frameworks */ = {isa = PBXBuildFile; productRef = 35D0A09D2D82525500381CAB /* DGCharts */; };
 		A0073A4F2D7F7863002EF911 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A0073A4E2D7F7863002EF911 /* GoogleSignIn */; };
 		A0073A512D7F7863002EF911 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = A0073A502D7F7863002EF911 /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
@@ -79,6 +80,7 @@
 			files = (
 				A0073A512D7F7863002EF911 /* GoogleSignInSwift in Frameworks */,
 				3575AB442D7BA3C70094DFAA /* FirebaseMessaging in Frameworks */,
+				35D0A09E2D82525500381CAB /* DGCharts in Frameworks */,
 				A0073A4F2D7F7863002EF911 /* GoogleSignIn in Frameworks */,
 				3575AB3A2D7BA3C70094DFAA /* FirebaseAnalytics in Frameworks */,
 				3575AB3E2D7BA3C70094DFAA /* FirebaseCore in Frameworks */,
@@ -155,6 +157,7 @@
 				3575AB452D7BA3C70094DFAA /* FirebaseStorage */,
 				A0073A4E2D7F7863002EF911 /* GoogleSignIn */,
 				A0073A502D7F7863002EF911 /* GoogleSignInSwift */,
+				35D0A09D2D82525500381CAB /* DGCharts */,
 			);
 			productName = QuizMaster;
 			productReference = 3575AAE02D7B9E9B0094DFAA /* QuizMaster.app */;
@@ -241,6 +244,7 @@
 			packageReferences = (
 				3575AB382D7BA3C70094DFAA /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				A0073A4D2D7F7863002EF911 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				35D0A09C2D82525500381CAB /* XCRemoteSwiftPackageReference "Charts" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3575AAE12D7B9E9B0094DFAA /* Products */;
@@ -607,6 +611,14 @@
 				minimumVersion = 11.9.0;
 			};
 		};
+		35D0A09C2D82525500381CAB /* XCRemoteSwiftPackageReference "Charts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/danielgindi/Charts.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.1.0;
+			};
+		};
 		A0073A4D2D7F7863002EF911 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS.git";
@@ -652,6 +664,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3575AB382D7BA3C70094DFAA /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		35D0A09D2D82525500381CAB /* DGCharts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 35D0A09C2D82525500381CAB /* XCRemoteSwiftPackageReference "Charts" */;
+			productName = DGCharts;
 		};
 		A0073A4E2D7F7863002EF911 /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;

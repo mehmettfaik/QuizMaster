@@ -11,6 +11,7 @@ class UserViewModel: ObservableObject {
     @Published private(set) var quizzesPlayed: Int = 0
     @Published private(set) var quizzesWon: Int = 0
     @Published private(set) var worldRank: Int = 0
+    @Published private(set) var categoryStats: [String: CategoryStats] = [:]
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var error: Error?
     
@@ -20,7 +21,7 @@ class UserViewModel: ObservableObject {
     // MARK: - User Data Loading
     func loadUserProfile() {
         guard let userId = Auth.auth().currentUser?.uid else {
-            self.error = NSError(domain: "UserError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Kullanıcı girişi yapılmamış"])
+            self.error = NSError(domain: "UserError", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"])
             return
         }
         
@@ -49,6 +50,19 @@ class UserViewModel: ObservableObject {
                 self.totalPoints = data["total_points"] as? Int ?? 0
                 self.quizzesPlayed = data["quizzes_played"] as? Int ?? 0
                 self.quizzesWon = data["quizzes_won"] as? Int ?? 0
+                
+                // Parse category stats
+                if let stats = data["category_stats"] as? [String: [String: Any]] {
+                    var parsedStats: [String: CategoryStats] = [:]
+                    for (category, statData) in stats {
+                        parsedStats[category] = CategoryStats(
+                            correctAnswers: statData["correct_answers"] as? Int ?? 0,
+                            wrongAnswers: statData["wrong_answers"] as? Int ?? 0,
+                            totalPoints: statData["total_points"] as? Int ?? 0
+                        )
+                    }
+                    self.categoryStats = parsedStats
+                }
                 
                 // World Rank hesaplama
                 self.calculateWorldRank(userId: userId, currentUserPoints: self.totalPoints)
@@ -93,41 +107,19 @@ class UserViewModel: ObservableObject {
     }
     
     // MARK: - Score Update
-    func updateUserScore(points: Int, won: Bool) {
+    func updateUserScore(category: String, correctAnswers: Int, wrongAnswers: Int, points: Int) {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
-        let userRef = db.collection("users").document(userId)
+        FirebaseService.shared.updateUserScore(
+            userId: userId,
+            category: category,
+            correctAnswers: correctAnswers,
+            wrongAnswers: wrongAnswers,
+            points: points
+        )
         
-        db.runTransaction({ (transaction, errorPointer) -> Any? in
-            let document: DocumentSnapshot
-            do {
-                try document = transaction.getDocument(userRef)
-            } catch let fetchError as NSError {
-                errorPointer?.pointee = fetchError
-                return nil
-            }
-            
-            guard let oldPoints = document.data()?["total_points"] as? Int,
-                  let oldQuizzesPlayed = document.data()?["quizzes_played"] as? Int,
-                  let oldQuizzesWon = document.data()?["quizzes_won"] as? Int else {
-                return nil
-            }
-            
-            transaction.updateData([
-                "total_points": oldPoints + points,
-                "quizzes_played": oldQuizzesPlayed + 1,
-                "quizzes_won": oldQuizzesWon + (won ? 1 : 0)
-            ], forDocument: userRef)
-            
-            return nil
-        }) { [weak self] (_, error) in
-            if let error = error {
-                print("❌ Error updating score: \(error.localizedDescription)")
-            } else {
-                print("✅ Score updated successfully")
-                self?.loadUserProfile()
-            }
-        }
+        // Reload user profile to get updated stats
+        loadUserProfile()
     }
     
     // MARK: - Sign Out

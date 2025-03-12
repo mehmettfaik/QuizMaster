@@ -32,7 +32,8 @@ class FirebaseService {
                 "total_points": 0,
                 "quizzes_played": 0,
                 "quizzes_won": 0,
-                "language": "en"
+                "language": "en",
+                "category_stats": [:] // Initialize empty category stats
             ]
             
             self?.db.collection("users").document(userId).setData(userData) { error in
@@ -41,7 +42,17 @@ class FirebaseService {
                     return
                 }
                 
-                let user = User(id: userId, email: email, name: name, photoURL: nil, totalPoints: 0, quizzesPlayed: 0, quizzesWon: 0, language: "en")
+                let user = User(
+                    id: userId,
+                    email: email,
+                    name: name,
+                    photoURL: nil,
+                    totalPoints: 0,
+                    quizzesPlayed: 0,
+                    quizzesWon: 0,
+                    language: "en",
+                    categoryStats: [:]
+                )
                 completion(.success(user))
             }
         }
@@ -118,7 +129,8 @@ class FirebaseService {
                             "total_points": 0,
                             "quizzes_played": 0,
                             "quizzes_won": 0,
-                            "language": "en"
+                            "language": "en",
+                            "category_stats": [:]
                         ]
                         
                         self?.db.collection("users").document(userId).setData(userData) { error in
@@ -135,7 +147,8 @@ class FirebaseService {
                                 totalPoints: 0,
                                 quizzesPlayed: 0,
                                 quizzesWon: 0,
-                                language: "en"
+                                language: "en",
+                                categoryStats: [:]
                             )
                             completion(.success(user))
                         }
@@ -183,8 +196,9 @@ class FirebaseService {
             }
     }
     
-    func updateUserScore(userId: String, points: Int, won: Bool) {
+    func updateUserScore(userId: String, category: String, correctAnswers: Int, wrongAnswers: Int, points: Int) {
         let userRef = db.collection("users").document(userId)
+        
         db.runTransaction({ (transaction, errorPointer) -> Any? in
             let userDocument: DocumentSnapshot
             do {
@@ -194,16 +208,28 @@ class FirebaseService {
                 return nil
             }
             
-            guard let oldPoints = userDocument.data()?["total_points"] as? Int,
-                  let oldPlayed = userDocument.data()?["quizzes_played"] as? Int,
-                  let oldWon = userDocument.data()?["quizzes_won"] as? Int else {
+            guard let oldPlayed = userDocument.data()?["quizzes_played"] as? Int else {
                 return nil
             }
             
+            var categoryStats = userDocument.data()?["category_stats"] as? [String: [String: Any]] ?? [:]
+            let currentStats = categoryStats[category] as? [String: Any] ?? [
+                "correct_answers": 0,
+                "wrong_answers": 0,
+                "total_points": 0
+            ]
+            
+            let updatedStats: [String: Any] = [
+                "correct_answers": (currentStats["correct_answers"] as? Int ?? 0) + correctAnswers,
+                "wrong_answers": (currentStats["wrong_answers"] as? Int ?? 0) + wrongAnswers,
+                "total_points": (currentStats["total_points"] as? Int ?? 0) + points
+            ]
+            
+            categoryStats[category] = updatedStats
+            
             transaction.updateData([
-                "total_points": oldPoints + points,
                 "quizzes_played": oldPlayed + 1,
-                "quizzes_won": oldWon + (won ? 1 : 0)
+                "category_stats": categoryStats
             ], forDocument: userRef)
             
             return nil

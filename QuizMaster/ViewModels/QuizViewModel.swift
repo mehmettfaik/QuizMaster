@@ -165,16 +165,33 @@ class QuizViewModel {
     
     // MARK: - Score Management
     private func updateUserScore() {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("❌ No user logged in")
+        guard let userId = Auth.auth().currentUser?.uid,
+              let quiz = quiz else {
+            print("❌ No user logged in or quiz not available")
             return
         }
         
-        let totalPossibleScore = totalQuestions * (quiz?.pointsPerQuestion ?? 10)
-        let won = score > (totalPossibleScore / 2)
+        // Calculate correct and wrong answers
+        var correctAnswers = 0
+        var wrongAnswers = 0
+        let pointsPerQuestion = quiz.pointsPerQuestion
         
-        firebaseService.updateUserScore(userId: userId, points: score, won: won)
-        print("✅ Score updated - Points: \(score), Won: \(won)")
+        for (index, question) in questions.enumerated() {
+            if score >= (index + 1) * pointsPerQuestion {
+                correctAnswers += 1
+            } else {
+                wrongAnswers += 1
+            }
+        }
+        
+        firebaseService.updateUserScore(
+            userId: userId,
+            category: currentCategory.rawValue,
+            correctAnswers: correctAnswers,
+            wrongAnswers: wrongAnswers,
+            points: score
+        )
+        print("✅ Score updated - Category: \(currentCategory.rawValue), Points: \(score), Correct: \(correctAnswers), Wrong: \(wrongAnswers)")
     }
     
     // MARK: - Quiz State

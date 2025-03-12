@@ -161,7 +161,7 @@ class CategoryCell: UICollectionViewCell {
         } else {
             applyModernStyle()
             titleLabel.text = title
-            subtitleLabel.text = "12 Quizzes"
+            //subtitleLabel.text = "12 Quizzes"
             
             switch title {
             case "Vehicle":

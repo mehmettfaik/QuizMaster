@@ -67,7 +67,8 @@ class HomeViewController: UIViewController {
         ("Science", "🔬"),
         ("Sports", "⚽️"),
         ("History", "📚"),
-        ("Art", "🎨")
+        ("Art", "🎨"),
+        ("Diğer", "⏩")
     ]
     
     override func viewDidLoad() {

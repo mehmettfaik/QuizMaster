@@ -49,6 +49,17 @@ class CategoryCell: UICollectionViewCell {
         return imageView
     }()
     
+    private let favoriteButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "heart"), for: .normal)
+        button.tintColor = .red
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
+    var onFavoriteButtonTapped: (() -> Void)?
+    private var categoryTitle: String = ""
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -64,6 +75,9 @@ class CategoryCell: UICollectionViewCell {
         containerView.addSubview(titleLabel)
         containerView.addSubview(subtitleLabel)
         containerView.addSubview(iconImageView)
+        containerView.addSubview(favoriteButton)
+        
+        favoriteButton.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
         
         setupConstraints()
     }
@@ -88,6 +102,7 @@ class CategoryCell: UICollectionViewCell {
         titleLabel.textAlignment = .center
         subtitleLabel.isHidden = true
         iconImageView.isHidden = true
+        favoriteButton.isHidden = true  // Hide favorite button in classic style
         
         // Reset constraints
         iconLabel.removeFromSuperview()
@@ -121,19 +136,27 @@ class CategoryCell: UICollectionViewCell {
         titleLabel.textAlignment = .left
         subtitleLabel.isHidden = false
         iconImageView.isHidden = false
+        favoriteButton.isHidden = false  // Show favorite button in modern style
         
         // Reset constraints
         titleLabel.removeFromSuperview()
         subtitleLabel.removeFromSuperview()
         iconImageView.removeFromSuperview()
+        favoriteButton.removeFromSuperview()
         containerView.addSubview(titleLabel)
         containerView.addSubview(subtitleLabel)
         containerView.addSubview(iconImageView)
+        containerView.addSubview(favoriteButton)
         
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
             titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            titleLabel.trailingAnchor.constraint(equalTo: favoriteButton.leadingAnchor, constant: -16),
+            
+            favoriteButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            favoriteButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            favoriteButton.widthAnchor.constraint(equalToConstant: 44),
+            favoriteButton.heightAnchor.constraint(equalToConstant: 44),
             
             subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
             subtitleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
@@ -151,7 +174,7 @@ class CategoryCell: UICollectionViewCell {
         containerView.layer.shadowOpacity = 0.1
     }
     
-    func configure(title: String, icon: String, style: Style = .classic) {
+    func configure(title: String, icon: String, style: Style = .classic, isFavorite: Bool = false) {
         self.style = style
         
         if style == .classic {
@@ -178,6 +201,13 @@ class CategoryCell: UICollectionViewCell {
                 iconImageView.image = UIImage(systemName: "questionmark.circle.fill")
             }
         }
+        
+        favoriteButton.setImage(UIImage(systemName: isFavorite ? "heart.fill" : "heart"), for: .normal)
+        categoryTitle = title
+    }
+    
+    @objc private func favoriteButtonTapped() {
+        onFavoriteButtonTapped?()
     }
     
     override func layoutSubviews() {

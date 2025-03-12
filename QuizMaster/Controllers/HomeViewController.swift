@@ -187,8 +187,24 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let category = categories[indexPath.item]
-        let difficultyVC = DifficultyViewController(category: category.title)
-        difficultyVC.modalPresentationStyle = .fullScreen
-        present(difficultyVC, animated: true)
+        
+        if category.title == "Diğer" {
+            // Dismiss current view controller to return to TabBarController
+            dismiss(animated: true) { [weak self] in
+                // Get reference to TabBarController and switch to Search tab (assuming it's index 1)
+                if let tabBarController = UIApplication.shared.windows.first?.rootViewController as? UITabBarController {
+                    tabBarController.selectedIndex = 1
+                    // Get reference to SearchViewController and update its state
+                    if let searchVC = tabBarController.selectedViewController as? SearchViewController {
+                        searchVC.segmentedControl.selectedSegmentIndex = 2
+                        searchVC.segmentedControlValueChanged()
+                    }
+                }
+            }
+        } else {
+            let difficultyVC = DifficultyViewController(category: category.title)
+            difficultyVC.modalPresentationStyle = .fullScreen
+            present(difficultyVC, animated: true)
+        }
     }
 } 

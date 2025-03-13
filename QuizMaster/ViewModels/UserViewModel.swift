@@ -19,6 +19,7 @@ class UserViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published private(set) var userName: String = ""
     @Published private(set) var userEmail: String = ""
+    @Published private(set) var userAvatar: String = "wizard" // Default avatar
     @Published private(set) var totalPoints: Int = 0
     @Published private(set) var quizzesPlayed: Int = 0
     @Published private(set) var quizzesWon: Int = 0
@@ -63,6 +64,7 @@ class UserViewModel: ObservableObject {
                 
                 self.userName = data["name"] as? String ?? ""
                 self.userEmail = data["email"] as? String ?? ""
+                self.userAvatar = data["avatar"] as? String ?? "wizard"
                 self.totalPoints = data["total_points"] as? Int ?? 0
                 self.quizzesPlayed = data["quizzes_played"] as? Int ?? 0
                 self.quizzesWon = data["quizzes_won"] as? Int ?? 0
@@ -249,6 +251,23 @@ class UserViewModel: ObservableObject {
     }
     
     // MARK: - Settings Operations
+    func updateAvatar(_ avatar: String, completion: @escaping (Error?) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(NSError(domain: "UserError", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"]))
+            return
+        }
+        
+        let userRef = db.collection("users").document(userId)
+        userRef.updateData([
+            "avatar": avatar
+        ]) { [weak self] error in
+            if error == nil {
+                self?.userAvatar = avatar
+            }
+            completion(error)
+        }
+    }
+    
     func updateProfilePhoto(imageData: Data, completion: @escaping (Error?) -> Void) {
         guard let userId = Auth.auth().currentUser?.uid else {
             completion(NSError(domain: "UserError", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"]))

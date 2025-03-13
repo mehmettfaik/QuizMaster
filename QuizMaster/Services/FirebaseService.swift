@@ -29,11 +29,12 @@ class FirebaseService {
             let userData: [String: Any] = [
                 "email": email,
                 "name": name,
+                "avatar": "wizard",
                 "total_points": 0,
                 "quizzes_played": 0,
                 "quizzes_won": 0,
-                "language": "en",
-                "category_stats": [:] // Initialize empty category stats
+                "language": "tr",
+                "category_stats": [:] as [String: Any]
             ]
             
             self?.db.collection("users").document(userId).setData(userData) { error in
@@ -46,11 +47,11 @@ class FirebaseService {
                     id: userId,
                     email: email,
                     name: name,
-                    photoURL: nil,
+                    avatar: "wizard",
                     totalPoints: 0,
                     quizzesPlayed: 0,
                     quizzesWon: 0,
-                    language: "en",
+                    language: "tr",
                     categoryStats: [:]
                 )
                 completion(.success(user))
@@ -126,11 +127,12 @@ class FirebaseService {
                         let userData: [String: Any] = [
                             "email": authentication.profile?.email ?? "",
                             "name": authentication.profile?.name ?? "",
+                            "avatar": "wizard", // Default avatar for new users
                             "total_points": 0,
                             "quizzes_played": 0,
                             "quizzes_won": 0,
-                            "language": "en",
-                            "category_stats": [:]
+                            "language": "tr",
+                            "category_stats": [:] as [String: Any]
                         ]
                         
                         self?.db.collection("users").document(userId).setData(userData) { error in
@@ -143,11 +145,11 @@ class FirebaseService {
                                 id: userId,
                                 email: authentication.profile?.email ?? "",
                                 name: authentication.profile?.name ?? "",
-                                photoURL: authentication.profile?.imageURL(withDimension: 200),
+                                avatar: "wizard", // Default avatar for new users
                                 totalPoints: 0,
                                 quizzesPlayed: 0,
                                 quizzesWon: 0,
-                                language: "en",
+                                language: "tr",
                                 categoryStats: [:]
                             )
                             completion(.success(user))

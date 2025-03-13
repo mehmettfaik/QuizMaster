@@ -14,6 +14,80 @@ extension UIViewController {
     }
 }
 
+// MARK: - Avatar Type
+enum Avatar: String, CaseIterable {
+    case leo = "leo"
+    case alex = "alex"
+    case owen = "owen"
+    case mia = "mia"
+    case sophia = "sophia"
+    case olivia = "olivia"
+    
+    var image: UIImage? {
+        // Her avatar için özel resim
+        switch self {
+        case .leo:
+            return UIImage(named: "leo_avatar") ?? UIImage(systemName: systemImage)
+        case .alex:
+            return UIImage(named: "alex_avatar") ?? UIImage(systemName: systemImage)
+        case .owen:
+            return UIImage(named: "owen_avatar") ?? UIImage(systemName: systemImage)
+        case .mia:
+            return UIImage(named: "mia_avatar") ?? UIImage(systemName: systemImage)
+        case .sophia:
+            return UIImage(named: "sophia_avatar") ?? UIImage(systemName: systemImage)
+        case .olivia:
+            return UIImage(named: "olivia_avatar") ?? UIImage(systemName: systemImage)
+        }
+    }
+    
+    // Fallback için SF Symbols (eğer özel resim yüklenemezse)
+    var systemImage: String {
+        switch self {
+        case .leo: return "person.fill.viewfinder"
+        case .alex: return "person.fill.checkmark"
+        case .owen: return "person.fill.questionmark"
+        case .mia: return "person.fill.badge.plus"
+        case .sophia: return "person.fill.turn.right"
+        case .olivia: return "person.fill.magnifyingglass"
+        }
+    }
+    
+    var displayName: String {
+        switch self {
+        case .leo: return "Leo"
+        case .alex: return "Alex"
+        case .owen: return "Owen"
+        case .mia: return "Mia"
+        case .sophia: return "Sophia"
+        case .olivia: return "Olivia"
+        }
+    }
+    
+    var color: UIColor {
+        switch self {
+        case .leo: return .white
+        case .alex: return .white
+        case .owen: return .white
+        case .mia: return .white
+        case .sophia: return .white
+        case .olivia: return .white
+        }
+    }
+    
+    // Avatar arkaplan renkleri
+    var backgroundColor: UIColor {
+        switch self {
+        case .leo: return .systemPurple.withAlphaComponent(0.1)
+        case .alex: return .systemGray.withAlphaComponent(0.1)
+        case .owen: return .systemBlue.withAlphaComponent(0.1)
+        case .mia: return .systemRed.withAlphaComponent(0.1)
+        case .sophia: return .systemOrange.withAlphaComponent(0.1)
+        case .olivia: return .systemBrown.withAlphaComponent(0.1)
+        }
+    }
+}
+
 class ProfileViewController: UIViewController {
     private let viewModel = UserViewModel()
     private var cancellables = Set<AnyCancellable>()
@@ -32,10 +106,13 @@ class ProfileViewController: UIViewController {
     
     private let profileImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFill
+        imageView.contentMode = .scaleAspectFit
         imageView.clipsToBounds = true
-        imageView.backgroundColor = .backgroundPurple
-        imageView.layer.cornerRadius = 50
+        imageView.backgroundColor = .clear
+        imageView.layer.cornerRadius = 60
+        imageView.layer.masksToBounds = true
+        imageView.layer.borderWidth = 1
+        imageView.layer.borderColor = UIColor.systemGray4.cgColor
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
@@ -149,10 +226,10 @@ class ProfileViewController: UIViewController {
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             
-            profileImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
             profileImageView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            profileImageView.widthAnchor.constraint(equalToConstant: 100),
-            profileImageView.heightAnchor.constraint(equalToConstant: 100),
+            profileImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            profileImageView.widthAnchor.constraint(equalToConstant: 120),
+            profileImageView.heightAnchor.constraint(equalToConstant: 120),
             
             nameLabel.topAnchor.constraint(equalTo: profileImageView.bottomAnchor, constant: 16),
             nameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
@@ -218,6 +295,22 @@ class ProfileViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] email in
                 self?.emailLabel.text = email
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$userAvatar
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] avatarType in
+                if let avatar = Avatar(rawValue: avatarType ?? "leo") {
+                    self?.profileImageView.image = avatar.image
+                    self?.profileImageView.backgroundColor = avatar.backgroundColor
+                    
+                    // Avatar görünüm ayarları
+                    UIView.animate(withDuration: 0.3) {
+                        self?.profileImageView.layer.borderColor = avatar.backgroundColor.cgColor
+                        self?.profileImageView.layer.borderWidth = 2
+                    }
+                }
             }
             .store(in: &cancellables)
         
@@ -421,7 +514,6 @@ class AchievementCell: UICollectionViewCell {
 // MARK: - Settings View Controller
 class SettingsViewController: UIViewController {
     private let viewModel: UserViewModel
-    private let imagePicker = UIImagePickerController()
     
     init(viewModel: UserViewModel) {
         self.viewModel = viewModel
@@ -457,7 +549,7 @@ class SettingsViewController: UIViewController {
             switch self {
             case .profile:
                 return [
-                    .init(title: "Profil Fotoğrafını Değiştir", icon: "person.crop.circle.fill"),
+                    .init(title: "Avatarımı Değiştir", icon: "person.crop.circle.fill"),
                     .init(title: "İsmi Değiştir", icon: "pencil")
                 ]
             case .appearance:
@@ -519,28 +611,45 @@ class SettingsViewController: UIViewController {
     }
     
     private func handleProfilePhotoChange() {
-        let alert = UIAlertController(title: "Profil Fotoğrafı", message: nil, preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: "Avatar Seç", message: "Karakterini seç", preferredStyle: .actionSheet)
         
-        if UIImagePickerController.isSourceTypeAvailable(.camera) {
-            alert.addAction(UIAlertAction(title: "Kamera", style: .default) { [weak self] _ in
-                self?.showImagePicker(sourceType: .camera)
-            })
+        for avatar in Avatar.allCases {
+            let action = UIAlertAction(title: avatar.displayName, style: .default) { [weak self] _ in
+                self?.viewModel.updateAvatar(avatar.rawValue) { error in
+                    DispatchQueue.main.async {
+                        if let error = error {
+                            self?.showErrorAlert(error)
+                        } else {
+                            self?.showSuccessAlert(message: "Avatarınız başarıyla güncellendi.")
+                        }
+                    }
+                }
+            }
+            
+            // Avatar önizleme resmi
+            if let image = avatar.image {
+                let size = CGSize(width: 30, height: 30)
+                UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+                let rect = CGRect(origin: .zero, size: size)
+                
+                // Arkaplan rengi
+                avatar.backgroundColor.setFill()
+                UIBezierPath(roundedRect: rect, cornerRadius: 8).fill()
+                
+                // Avatar resmi
+                image.draw(in: rect.insetBy(dx: 4, dy: 4))
+                
+                let finalImage = UIGraphicsGetImageFromCurrentImageContext()
+                UIGraphicsEndImageContext()
+                
+                action.setValue(finalImage?.withRenderingMode(.alwaysOriginal), forKey: "image")
+            }
+            
+            alert.addAction(action)
         }
         
-        alert.addAction(UIAlertAction(title: "Galeri", style: .default) { [weak self] _ in
-            self?.showImagePicker(sourceType: .photoLibrary)
-        })
-        
         alert.addAction(UIAlertAction(title: "İptal", style: .cancel))
-        
         present(alert, animated: true)
-    }
-    
-    private func showImagePicker(sourceType: UIImagePickerController.SourceType) {
-        imagePicker.sourceType = sourceType
-        imagePicker.delegate = self
-        imagePicker.allowsEditing = true
-        present(imagePicker, animated: true)
     }
     
     private func handleNameChange() {
@@ -719,26 +828,6 @@ class SettingsViewController: UIViewController {
     }
 }
 
-// MARK: - Image Picker Delegate
-extension SettingsViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-        picker.dismiss(animated: true)
-        
-        guard let image = info[.editedImage] as? UIImage,
-              let imageData = image.jpegData(compressionQuality: 0.5) else { return }
-        
-        viewModel.updateProfilePhoto(imageData: imageData) { [weak self] error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    self?.showErrorAlert(error)
-                } else {
-                    self?.showSuccessAlert(message: "Profil fotoğrafınız başarıyla güncellendi.")
-                }
-            }
-        }
-    }
-}
-
 // MARK: - Settings TableView Delegate & DataSource
 extension SettingsViewController: UITableViewDelegate, UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
@@ -783,7 +872,7 @@ extension SettingsViewController: UITableViewDelegate, UITableViewDataSource {
         guard let section = Section(rawValue: indexPath.section) else { return }
         
         switch (section, indexPath.row) {
-        case (.profile, 0): // Profil Fotoğrafı
+        case (.profile, 0): // Avatarımı Değiştir
             handleProfilePhotoChange()
         case (.profile, 1): // İsim Değiştirme
             handleNameChange()

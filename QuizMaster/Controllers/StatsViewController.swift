@@ -3,7 +3,7 @@ import DGCharts
 import Combine
 import Charts
 
-class StatsViewController: UIViewController {
+class StatsViewController: UIViewController, ChartViewDelegate {
     private let viewModel = UserViewModel()
     private var cancellables = Set<AnyCancellable>()
     
@@ -76,11 +76,29 @@ class StatsViewController: UIViewController {
         return chartView
     }()
     
+    private let lineChartView: BarChartView = {
+        let chartView = BarChartView()
+        chartView.isHidden = true
+        chartView.translatesAutoresizingMaskIntoConstraints = false
+        return chartView
+    }()
+    
+    private let categoryLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 18, weight: .semibold)
+        label.textColor = .primaryPurple
+        label.textAlignment = .center
+        label.isHidden = true
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupBindings()
         setupPieChart()
+        setupLineChart()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -100,6 +118,8 @@ class StatsViewController: UIViewController {
         
         view.addSubview(statsView)
         statsView.addSubview(pieChartView)
+        statsView.addSubview(categoryLabel)
+        statsView.addSubview(lineChartView)
         
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -130,11 +150,21 @@ class StatsViewController: UIViewController {
             pieChartView.topAnchor.constraint(equalTo: statsView.topAnchor, constant: 20),
             pieChartView.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
             pieChartView.trailingAnchor.constraint(equalTo: statsView.trailingAnchor, constant: -20),
-            pieChartView.heightAnchor.constraint(equalTo: pieChartView.widthAnchor)
+            pieChartView.heightAnchor.constraint(equalTo: pieChartView.widthAnchor),
+            
+            categoryLabel.topAnchor.constraint(equalTo: pieChartView.bottomAnchor, constant: 20),
+            categoryLabel.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
+            categoryLabel.trailingAnchor.constraint(equalTo: statsView.trailingAnchor, constant: -20),
+            
+            lineChartView.topAnchor.constraint(equalTo: categoryLabel.bottomAnchor, constant: 10),
+            lineChartView.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
+            lineChartView.trailingAnchor.constraint(equalTo: statsView.trailingAnchor, constant: -20),
+            lineChartView.heightAnchor.constraint(equalToConstant: 200)
         ])
     }
     
     private func setupPieChart() {
+        pieChartView.delegate = self
         pieChartView.chartDescription.enabled = false
         pieChartView.drawHoleEnabled = true
         pieChartView.holeColor = .clear
@@ -151,6 +181,24 @@ class StatsViewController: UIViewController {
         legend.xEntrySpace = 7
         legend.yEntrySpace = 0
         legend.yOffset = 0
+    }
+    
+    private func setupLineChart() {
+        lineChartView.rightAxis.enabled = false
+        lineChartView.animate(xAxisDuration: 1.0, yAxisDuration: 1.0)
+        lineChartView.legend.enabled = false
+        
+        let leftAxis = lineChartView.leftAxis
+        leftAxis.labelTextColor = .black
+        leftAxis.axisMinimum = 0
+        leftAxis.drawGridLinesEnabled = false
+        
+        let xAxis = lineChartView.xAxis
+        xAxis.labelPosition = .bottom
+        xAxis.labelTextColor = .black
+        xAxis.drawGridLinesEnabled = false
+        xAxis.valueFormatter = IndexAxisValueFormatter(values: ["Doğru", "Yanlış", "Puan"])
+        xAxis.granularity = 1
     }
     
     private func updatePieChart(with categoryStats: [String: CategoryStats]) {
@@ -173,6 +221,54 @@ class StatsViewController: UIViewController {
         let data = PieChartData(dataSet: dataSet)
         pieChartView.data = data
         pieChartView.notifyDataSetChanged()
+    }
+    
+    private func updateLineChart(for category: String, stats: CategoryStats) {
+        categoryLabel.text = "\(category) Detayları"
+        categoryLabel.isHidden = false
+        lineChartView.isHidden = false
+        
+        let entries = [
+            BarChartDataEntry(x: 0, y: Double(stats.correctAnswers)),
+            BarChartDataEntry(x: 1, y: Double(stats.wrongAnswers)),
+            BarChartDataEntry(x: 2, y: Double(stats.totalPoints))
+        ]
+        
+        let dataSet = BarChartDataSet(entries: entries, label: "")
+        
+        // Farklı renkler atayalım
+        dataSet.colors = [
+            UIColor.systemGreen,  // Doğru cevaplar için yeşil
+            UIColor.systemRed,    // Yanlış cevaplar için kırmızı
+            UIColor.primaryPurple // Toplam puan için mor
+        ]
+        
+        dataSet.valueTextColor = .black
+        dataSet.valueFont = .systemFont(ofSize: 12)
+        dataSet.valueFormatter = DefaultValueFormatter(decimals: 0)
+        
+        let data = BarChartData(dataSet: dataSet)
+        data.barWidth = 0.7
+        
+        lineChartView.data = data
+        lineChartView.notifyDataSetChanged()
+        
+        // Animasyonu yeniden tetikle
+        lineChartView.animate(xAxisDuration: 0.5, yAxisDuration: 1.0)
+    }
+    
+    // MARK: - ChartViewDelegate
+    func chartValueSelected(_ chartView: ChartViewBase, entry: ChartDataEntry, highlight: Highlight) {
+        if let pieEntry = entry as? PieChartDataEntry,
+           let category = pieEntry.label,
+           let stats = viewModel.categoryStats[category] {
+            updateLineChart(for: category, stats: stats)
+        }
+    }
+    
+    func chartValueNothingSelected(_ chartView: ChartViewBase) {
+        categoryLabel.isHidden = true
+        lineChartView.isHidden = true
     }
     
     private func setupBindings() {

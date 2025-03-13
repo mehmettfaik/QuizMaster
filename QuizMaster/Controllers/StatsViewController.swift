@@ -34,6 +34,26 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         return label
     }()
     
+    private let quizzesLabel: UILabel = {
+        let label = UILabel()
+        label.text = "QUIZZES"
+        label.font = .systemFont(ofSize: 14)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let quizzesValueLabel: UILabel = {
+        let label = UILabel()
+        label.text = "0"
+        label.font = .systemFont(ofSize: 28, weight: .bold)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
     private let rankLabel: UILabel = {
         let label = UILabel()
         label.text = "WORLD RANK"
@@ -112,6 +132,8 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         view.addSubview(headerView)
         headerView.addSubview(pointsLabel)
         headerView.addSubview(pointsValueLabel)
+        headerView.addSubview(quizzesLabel)
+        headerView.addSubview(quizzesValueLabel)
         headerView.addSubview(rankLabel)
         headerView.addSubview(rankValueLabel)
         headerView.addSubview(loadingIndicator)
@@ -135,6 +157,12 @@ class StatsViewController: UIViewController, ChartViewDelegate {
             
             pointsValueLabel.leadingAnchor.constraint(equalTo: pointsLabel.leadingAnchor),
             pointsValueLabel.topAnchor.constraint(equalTo: pointsLabel.bottomAnchor, constant: 4),
+            
+            quizzesLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            quizzesLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor, constant: 10),
+            
+            quizzesValueLabel.centerXAnchor.constraint(equalTo: quizzesLabel.centerXAnchor),
+            quizzesValueLabel.topAnchor.constraint(equalTo: quizzesLabel.bottomAnchor, constant: 4),
             
             rankLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
             rankLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
@@ -310,6 +338,13 @@ class StatsViewController: UIViewController, ChartViewDelegate {
                 if let error = error {
                     self?.showErrorAlert(error)
                 }
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$quizzesPlayed
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] quizzes in
+                self?.quizzesValueLabel.text = "\(quizzes)"
             }
             .store(in: &cancellables)
     }

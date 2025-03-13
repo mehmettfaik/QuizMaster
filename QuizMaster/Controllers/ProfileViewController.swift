@@ -34,7 +34,16 @@ class ProfileViewController: UIViewController {
         label.textColor = .black
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
+        label.isUserInteractionEnabled = true
         return label
+    }()
+    
+    private let editNameButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "pencil.circle.fill"), for: .normal)
+        button.tintColor = .primaryPurple
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
     }()
     
     private let emailLabel: UILabel = {
@@ -94,6 +103,7 @@ class ProfileViewController: UIViewController {
         
         view.addSubview(profileImageView)
         view.addSubview(nameLabel)
+        view.addSubview(editNameButton)
         view.addSubview(emailLabel)
         view.addSubview(statsStackView)
         view.addSubview(loadingIndicator)
@@ -112,6 +122,11 @@ class ProfileViewController: UIViewController {
             nameLabel.topAnchor.constraint(equalTo: profileImageView.bottomAnchor, constant: 16),
             nameLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             nameLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            
+            editNameButton.leadingAnchor.constraint(equalTo: nameLabel.trailingAnchor, constant: -40),
+            editNameButton.centerYAnchor.constraint(equalTo: nameLabel.centerYAnchor),
+            editNameButton.widthAnchor.constraint(equalToConstant: 30),
+            editNameButton.heightAnchor.constraint(equalToConstant: 30),
             
             emailLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8),
             emailLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
@@ -136,6 +151,13 @@ class ProfileViewController: UIViewController {
         
         // Sign Out action
         signOutButton.addTarget(self, action: #selector(signOutTapped), for: .touchUpInside)
+        
+        // Edit name action
+        editNameButton.addTarget(self, action: #selector(editNameTapped), for: .touchUpInside)
+        
+        // Add tap gesture to name label
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(editNameTapped))
+        nameLabel.addGestureRecognizer(tapGesture)
     }
     
     private func setupBindings() {
@@ -208,6 +230,44 @@ class ProfileViewController: UIViewController {
             let loginVC = LoginViewController()
             loginVC.modalPresentationStyle = .fullScreen
             self?.present(loginVC, animated: true)
+        })
+        
+        present(alert, animated: true)
+    }
+    
+    @objc private func editNameTapped() {
+        let alert = UIAlertController(
+            title: "İsim Değiştir",
+            message: "Yeni isminizi girin",
+            preferredStyle: .alert
+        )
+        
+        alert.addTextField { textField in
+            textField.text = self.nameLabel.text
+            textField.placeholder = "İsminiz"
+            textField.autocapitalizationType = .words
+        }
+        
+        alert.addAction(UIAlertAction(title: "İptal", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Kaydet", style: .default) { [weak self] _ in
+            guard let self = self,
+                  let textField = alert.textFields?.first,
+                  let newName = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !newName.isEmpty else { return }
+            
+            // Show loading indicator
+            self.loadingIndicator.startAnimating()
+            
+            // Update name in Firebase
+            self.viewModel.updateUserName(newName) { [weak self] error in
+                DispatchQueue.main.async {
+                    self?.loadingIndicator.stopAnimating()
+                    
+                    if let error = error {
+                        self?.showErrorAlert(error)
+                    }
+                }
+            }
         })
         
         present(alert, animated: true)

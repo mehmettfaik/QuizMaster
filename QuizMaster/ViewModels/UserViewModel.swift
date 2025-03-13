@@ -131,4 +131,27 @@ class UserViewModel: ObservableObject {
             print("❌ Error signing out: \(error.localizedDescription)")
         }
     }
+    
+    // MARK: - User Data Update
+    func updateUserName(_ newName: String, completion: @escaping (Error?) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(NSError(domain: "UserError", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"]))
+            return
+        }
+        
+        let userRef = db.collection("users").document(userId)
+        
+        userRef.updateData([
+            "name": newName
+        ]) { error in
+            if let error = error {
+                print("❌ Error updating user name: \(error.localizedDescription)")
+                completion(error)
+            } else {
+                print("✅ User name updated successfully")
+                self.userName = newName
+                completion(nil)
+            }
+        }
+    }
 } 

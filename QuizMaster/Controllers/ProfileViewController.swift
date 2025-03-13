@@ -18,6 +18,18 @@ class ProfileViewController: UIViewController {
     private let viewModel = UserViewModel()
     private var cancellables = Set<AnyCancellable>()
     
+    private let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        return scrollView
+    }()
+    
+    private let contentView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     private let profileImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
@@ -55,18 +67,25 @@ class ProfileViewController: UIViewController {
         return label
     }()
     
-    private let statsStackView: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .horizontal
-        stack.distribution = .fillEqually
-        stack.spacing = 20
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
+    private let achievementsLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Başarı Rozetleri"
+        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.textColor = .black
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
     }()
     
-    private let pointsView = StatView(title: "Points")
-    private let rankView = StatView(title: "World Rank")
-    private let quizzesPlayedView = StatView(title: "Quizzes Played")
+    private let achievementsCollectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .vertical
+        layout.minimumLineSpacing = 16
+        layout.minimumInteritemSpacing = 16
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.backgroundColor = .clear
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        return collectionView
+    }()
     
     private let loadingIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
@@ -90,6 +109,7 @@ class ProfileViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupCollectionView()
         setupBindings()
     }
     
@@ -101,27 +121,38 @@ class ProfileViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = .white
         
-        view.addSubview(profileImageView)
-        view.addSubview(nameLabel)
-        view.addSubview(editNameButton)
-        view.addSubview(emailLabel)
-        view.addSubview(statsStackView)
-        view.addSubview(loadingIndicator)
-        view.addSubview(signOutButton)
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
         
-        statsStackView.addArrangedSubview(pointsView)
-        statsStackView.addArrangedSubview(rankView)
-        statsStackView.addArrangedSubview(quizzesPlayedView)
+        contentView.addSubview(profileImageView)
+        contentView.addSubview(nameLabel)
+        contentView.addSubview(editNameButton)
+        contentView.addSubview(emailLabel)
+        contentView.addSubview(achievementsLabel)
+        contentView.addSubview(achievementsCollectionView)
+        contentView.addSubview(signOutButton)
+        contentView.addSubview(loadingIndicator)
         
         NSLayoutConstraint.activate([
-            profileImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            profileImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            
+            profileImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            profileImageView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             profileImageView.widthAnchor.constraint(equalToConstant: 100),
             profileImageView.heightAnchor.constraint(equalToConstant: 100),
             
             nameLabel.topAnchor.constraint(equalTo: profileImageView.bottomAnchor, constant: 16),
-            nameLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            nameLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            nameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            nameLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
             editNameButton.leadingAnchor.constraint(equalTo: nameLabel.trailingAnchor, constant: -40),
             editNameButton.centerYAnchor.constraint(equalTo: nameLabel.centerYAnchor),
@@ -129,20 +160,26 @@ class ProfileViewController: UIViewController {
             editNameButton.heightAnchor.constraint(equalToConstant: 30),
             
             emailLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8),
-            emailLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            emailLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            emailLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            emailLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
-            statsStackView.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 32),
-            statsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            statsStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            achievementsLabel.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 32),
+            achievementsLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            achievementsLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
-            signOutButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
-            signOutButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            signOutButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            achievementsCollectionView.topAnchor.constraint(equalTo: achievementsLabel.bottomAnchor, constant: 16),
+            achievementsCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            achievementsCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            achievementsCollectionView.heightAnchor.constraint(equalToConstant: 500),
+            
+            signOutButton.topAnchor.constraint(equalTo: achievementsCollectionView.bottomAnchor, constant: 20),
+            signOutButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 40),
+            signOutButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -40),
             signOutButton.heightAnchor.constraint(equalToConstant: 50),
+            signOutButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
             
-            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            loadingIndicator.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
         ])
         
         // Profil fotoğrafı için placeholder
@@ -158,6 +195,12 @@ class ProfileViewController: UIViewController {
         // Add tap gesture to name label
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(editNameTapped))
         nameLabel.addGestureRecognizer(tapGesture)
+    }
+    
+    private func setupCollectionView() {
+        achievementsCollectionView.delegate = self
+        achievementsCollectionView.dataSource = self
+        achievementsCollectionView.register(AchievementCell.self, forCellWithReuseIdentifier: "AchievementCell")
     }
     
     private func setupBindings() {
@@ -186,27 +229,13 @@ class ProfileViewController: UIViewController {
             }
             .store(in: &cancellables)
         
-        viewModel.$totalPoints
+        viewModel.$achievements
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] points in
-                self?.pointsView.setValue("\(points)")
+            .sink { [weak self] _ in
+                self?.achievementsCollectionView.reloadData()
             }
             .store(in: &cancellables)
-        
-        viewModel.$worldRank
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] rank in
-                self?.rankView.setValue("#\(rank)")
-            }
-            .store(in: &cancellables)
-        
-        viewModel.$quizzesPlayed
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] count in
-                self?.quizzesPlayedView.setValue("\(count)")
-            }
-            .store(in: &cancellables)
-        
+            
         viewModel.$error
             .receive(on: DispatchQueue.main)
             .sink { [weak self] error in
@@ -274,29 +303,94 @@ class ProfileViewController: UIViewController {
     }
 }
 
-// MARK: - Stat View
-class StatView: UIView {
+// MARK: - UICollectionView DataSource & Delegate
+extension ProfileViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if viewModel.achievements.isEmpty {
+            return 1 // Eğer rozet yoksa bir hücre göster
+        }
+        return viewModel.achievements.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "AchievementCell", for: indexPath) as! AchievementCell
+        
+        if viewModel.achievements.isEmpty {
+            // Eğer rozet yoksa bilgilendirme mesajı göster
+            cell.configureAsPlaceholder()
+        } else {
+            let achievement = viewModel.achievements[indexPath.item]
+            cell.configure(with: achievement)
+        }
+        
+        return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let width = (collectionView.bounds.width - 16) / 2
+        return CGSize(width: width, height: 120)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let achievement = viewModel.achievements[indexPath.item]
+        
+        let alert = UIAlertController(
+            title: achievement.title,
+            message: "\(achievement.description)\n\nİlerleme: \(achievement.currentValue)/\(achievement.requirement)",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+        present(alert, animated: true)
+    }
+}
+
+// MARK: - Achievement Cell
+class AchievementCell: UICollectionViewCell {
+    private let containerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .backgroundPurple
+        view.layer.cornerRadius = 12
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private let iconImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
+    }()
+    
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 14)
+        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        label.textColor = .black
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let descriptionLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 12)
         label.textColor = .gray
         label.textAlignment = .center
+        label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
-    private let valueLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 24, weight: .bold)
-        label.textColor = .primaryPurple
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+    private let progressView: UIProgressView = {
+        let progress = UIProgressView(progressViewStyle: .default)
+        progress.trackTintColor = .systemGray5
+        progress.progressTintColor = .primaryPurple
+        progress.translatesAutoresizingMaskIntoConstraints = false
+        return progress
     }()
     
-    init(title: String) {
-        super.init(frame: .zero)
-        titleLabel.text = title
+    override init(frame: CGRect) {
+        super.init(frame: frame)
         setupUI()
     }
     
@@ -305,26 +399,55 @@ class StatView: UIView {
     }
     
     private func setupUI() {
-        backgroundColor = .backgroundPurple
-        layer.cornerRadius = 12
-        
-        addSubview(titleLabel)
-        addSubview(valueLabel)
+        contentView.addSubview(containerView)
+        containerView.addSubview(iconImageView)
+        containerView.addSubview(titleLabel)
+        containerView.addSubview(descriptionLabel)
+        containerView.addSubview(progressView)
         
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 12),
-            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            containerView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             
-            valueLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
-            valueLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
-            valueLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
-            valueLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12)
+            iconImageView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
+            iconImageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            iconImageView.widthAnchor.constraint(equalToConstant: 40),
+            iconImageView.heightAnchor.constraint(equalToConstant: 40),
+            
+            titleLabel.topAnchor.constraint(equalTo: iconImageView.bottomAnchor, constant: 8),
+            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
+            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -8),
+            
+            descriptionLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            descriptionLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
+            descriptionLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -8),
+            
+            progressView.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 8),
+            progressView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            progressView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            progressView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16)
         ])
     }
     
+    func configure(with achievement: AchievementBadge) {
+        titleLabel.text = achievement.title
+        descriptionLabel.text = achievement.description
+        iconImageView.image = UIImage(systemName: achievement.icon)
+        iconImageView.tintColor = achievement.isUnlocked ? .primaryPurple : .gray
+        progressView.progress = Float(achievement.progress)
+        
+        // Kilitsiz/kilitli duruma göre opacity ayarla
+        containerView.alpha = achievement.isUnlocked ? 1.0 : 0.7
+    }
     
-    func setValue(_ value: String) {
-        valueLabel.text = value
+    func configureAsPlaceholder() {
+        titleLabel.text = "Henüz Rozet Yok"
+        descriptionLabel.text = "Quiz çözerek rozetler kazanabilirsiniz!"
+        iconImageView.image = UIImage(systemName: "star.circle")
+        iconImageView.tintColor = .gray
+        progressView.isHidden = true
+        containerView.alpha = 0.7
     }
 } 

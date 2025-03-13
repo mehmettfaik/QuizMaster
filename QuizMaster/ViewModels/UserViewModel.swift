@@ -3,6 +3,18 @@ import FirebaseFirestore
 import FirebaseAuth
 import Combine
 
+// MARK: - Achievement Badge
+struct AchievementBadge {
+    let id: String
+    let title: String
+    let description: String
+    let icon: String
+    let isUnlocked: Bool
+    let progress: Double // 0.0 to 1.0
+    let requirement: Int
+    let currentValue: Int
+}
+
 class UserViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published private(set) var userName: String = ""
@@ -14,6 +26,7 @@ class UserViewModel: ObservableObject {
     @Published private(set) var categoryStats: [String: CategoryStats] = [:]
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var error: Error?
+    @Published private(set) var achievements: [AchievementBadge] = []
     
     private var cancellables = Set<AnyCancellable>()
     private let db = Firestore.firestore()
@@ -63,6 +76,9 @@ class UserViewModel: ObservableObject {
                     }
                     self.categoryStats = parsedStats
                 }
+                
+                // Calculate achievements after loading data
+                self.calculateAchievements()
                 
                 // World Rank hesaplama
                 self.calculateWorldRank(userId: userId, currentUserPoints: self.totalPoints)
@@ -152,6 +168,80 @@ class UserViewModel: ObservableObject {
                 self.userName = newName
                 completion(nil)
             }
+        }
+    }
+    
+    private func calculateAchievements() {
+        let badges: [AchievementBadge] = [
+            // Points Badges
+            AchievementBadge(
+                id: "points_100",
+                title: "Çaylak",
+                description: "100 puan topla",
+                icon: "star.circle.fill",
+                isUnlocked: totalPoints >= 100,
+                progress: min(Double(totalPoints) / 100.0, 1.0),
+                requirement: 100,
+                currentValue: totalPoints
+            ),
+            AchievementBadge(
+                id: "points_500",
+                title: "Uzman",
+                description: "500 puan topla",
+                icon: "star.circle.fill",
+                isUnlocked: totalPoints >= 500,
+                progress: min(Double(totalPoints) / 500.0, 1.0),
+                requirement: 500,
+                currentValue: totalPoints
+            ),
+            AchievementBadge(
+                id: "points_1000",
+                title: "Efsane",
+                description: "1000 puan topla",
+                icon: "star.square.fill",
+                isUnlocked: totalPoints >= 1000,
+                progress: min(Double(totalPoints) / 1000.0, 1.0),
+                requirement: 1000,
+                currentValue: totalPoints
+            ),
+            
+            // Quiz Count Badges
+            AchievementBadge(
+                id: "quiz_5",
+                title: "Quiz Sever",
+                description: "5 quiz tamamla",
+                icon: "questionmark.circle.fill",
+                isUnlocked: quizzesPlayed >= 5,
+                progress: min(Double(quizzesPlayed) / 5.0, 1.0),
+                requirement: 5,
+                currentValue: quizzesPlayed
+            ),
+            AchievementBadge(
+                id: "quiz_20",
+                title: "Quiz Ustası",
+                description: "20 quiz tamamla",
+                icon: "questionmark.square.fill",
+                isUnlocked: quizzesPlayed >= 20,
+                progress: min(Double(quizzesPlayed) / 20.0, 1.0),
+                requirement: 20,
+                currentValue: quizzesPlayed
+            ),
+            
+            // Rank Badges
+            AchievementBadge(
+                id: "rank_top_10",
+                title: "Elit",
+                description: "İlk 10'a gir",
+                icon: "crown.fill",
+                isUnlocked: worldRank <= 10,
+                progress: worldRank <= 10 ? 1.0 : 0.0,
+                requirement: 10,
+                currentValue: worldRank
+            )
+        ]
+        
+        DispatchQueue.main.async {
+            self.achievements = badges
         }
     }
 } 

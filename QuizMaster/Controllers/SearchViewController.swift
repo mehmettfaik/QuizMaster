@@ -105,6 +105,9 @@ class SearchViewController: UIViewController {
         
         quizListViewModel.onError = { [weak self] error in
             print("Error fetching quizzes: \(error.localizedDescription)")
+            if let self = self {
+                self.showErrorAlert(error)
+            }
         }
         
         // Load favorite categories from UserDefaults

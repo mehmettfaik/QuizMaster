@@ -27,6 +27,9 @@ class UserViewModel: ObservableObject {
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var error: Error?
     @Published private(set) var achievements: [AchievementBadge] = []
+    @Published private(set) var isDarkMode: Bool = false
+    @Published private(set) var language: String = "tr"
+    @Published private(set) var notificationsEnabled: Bool = false
     
     private var cancellables = Set<AnyCancellable>()
     private let db = Firestore.firestore()
@@ -243,5 +246,108 @@ class UserViewModel: ObservableObject {
         DispatchQueue.main.async {
             self.achievements = badges
         }
+    }
+    
+    // MARK: - Settings Operations
+    func updateProfilePhoto(imageData: Data, completion: @escaping (Error?) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(NSError(domain: "UserError", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"]))
+            return
+        }
+        
+        FirebaseService.shared.uploadProfileImage(userId: userId, imageData: imageData) { [weak self] result in
+            switch result {
+            case .success(let url):
+                // Update user's photo URL in Firestore
+                let userRef = self?.db.collection("users").document(userId)
+                userRef?.updateData(["photoURL": url]) { error in
+                    completion(error)
+                }
+            case .failure(let error):
+                completion(error)
+            }
+        }
+    }
+    
+    func updatePassword(currentPassword: String, newPassword: String, completion: @escaping (Error?) -> Void) {
+        guard let user = Auth.auth().currentUser,
+              let email = user.email else {
+            completion(NSError(domain: "UserError", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"]))
+            return
+        }
+        
+        // Reauthenticate before changing password
+        let credential = EmailAuthProvider.credential(withEmail: email, password: currentPassword)
+        user.reauthenticate(with: credential) { _, error in
+            if let error = error {
+                completion(error)
+                return
+            }
+            
+            // Change password
+            user.updatePassword(to: newPassword) { error in
+                completion(error)
+            }
+        }
+    }
+    
+    func deleteAccount(password: String, completion: @escaping (Error?) -> Void) {
+        guard let user = Auth.auth().currentUser,
+              let email = user.email else {
+            completion(NSError(domain: "UserError", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"]))
+            return
+        }
+        
+        // Reauthenticate before deleting account
+        let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+        user.reauthenticate(with: credential) { [weak self] _, error in
+            if let error = error {
+                completion(error)
+                return
+            }
+            
+            // Delete user data from Firestore
+            self?.db.collection("users").document(user.uid).delete { error in
+                if let error = error {
+                    completion(error)
+                    return
+                }
+                
+                // Delete user account
+                user.delete { error in
+                    completion(error)
+                }
+            }
+        }
+    }
+    
+    func updateLanguage(_ language: String, completion: @escaping (Error?) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(NSError(domain: "UserError", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"]))
+            return
+        }
+        
+        let userRef = db.collection("users").document(userId)
+        userRef.updateData(["language": language]) { [weak self] error in
+            if error == nil {
+                self?.language = language
+            }
+            completion(error)
+        }
+    }
+    
+    func updateTheme(isDark: Bool) {
+        isDarkMode = isDark
+        if #available(iOS 13.0, *) {
+            let scenes = UIApplication.shared.connectedScenes
+            let windowScene = scenes.first as? UIWindowScene
+            let window = windowScene?.windows.first
+            window?.overrideUserInterfaceStyle = isDark ? .dark : .light
+        }
+    }
+    
+    func updateNotificationSettings(enabled: Bool) {
+        notificationsEnabled = enabled
+        // Implement notification settings update logic
     }
 } 

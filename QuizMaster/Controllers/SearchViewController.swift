@@ -5,12 +5,18 @@ class SearchViewController: UIViewController {
     private let quizListViewModel = QuizListViewModel()
     
     private let categories: [(title: String, icon: String)] = [
-        ("Vehicle", "🚗"),
-        ("Science", "🔬"),
-        ("Sports", "⚽️"),
-        ("History", "📚"),
-        ("Art", "🎨"),
-        ("Celebrity", "⭐️")
+        ("Vehicle", "car.fill"),
+        ("Science", "atom"),
+        ("Sports", "sportscourt.fill"),
+        ("History", "book.fill"),
+        ("Art", "paintpalette.fill"),
+        ("Celebrity", "star.fill"),
+        ("Video Games", "gamecontroller.fill"),
+        ("General Culture", "globe"),
+        ("Animals", "pawprint.fill"),
+        ("Computer Science", "desktopcomputer"),
+        ("Mathematics", "function"),
+        ("Mythology", "building.columns.fill")
     ]
     
     private var favoriteCategories: Set<String> = Set()
@@ -194,11 +200,11 @@ extension SearchViewController: UICollectionViewDelegate, UICollectionViewDataSo
         
         if segmentedControl.selectedSegmentIndex == 0 || segmentedControl.selectedSegmentIndex == 1 {
             if filteredCategories.isEmpty && isSearching {
-                cell.configure(title: "No results found", icon: "❌", style: .modern)
+                cell.configure(title: "No results found", systemImage: "xmark.circle.fill", style: .modern)
             } else {
                 let category = filteredCategories[indexPath.item]
                 let isFavorite = favoriteCategories.contains(category.title)
-                cell.configure(title: category.title, icon: category.icon, style: .modern, isFavorite: isFavorite)
+                cell.configure(title: category.title, systemImage: category.icon, style: .modern, isFavorite: isFavorite)
                 
                 cell.onFavoriteButtonTapped = { [weak self] in
                     self?.toggleFavorite(for: category.title)

@@ -28,20 +28,32 @@ class QuizViewModel {
         isLoading = true
         error = nil
         
-        currentCategory = QuizCategory(rawValue: category) ?? .vehicle
+        currentCategory = QuizCategory(rawValue: category) ?? .science
         currentDifficulty = difficulty
+        
+        // Format category name for Firestore path - camelCase
+        let formattedCategory = category.components(separatedBy: " ")
+            .enumerated()
+            .map { index, word in
+                if index == 0 {
+                    return word.lowercased()
+                }
+                return word.prefix(1).uppercased() + word.dropFirst().lowercased()
+            }
+            .joined()
         
         let db = Firestore.firestore()
         let questionsRef = db
             .collection("aaaa")
-            .document(category.lowercased())
+            .document(formattedCategory)
             .collection("questions")
             .whereField("difficulty", isEqualTo: difficulty.rawValue.lowercased())
         
         print("📝 Loading questions for:")
         print("   Category: \(category)")
+        print("   Formatted Category (camelCase): \(formattedCategory)")
         print("   Difficulty: \(difficulty.rawValue)")
-        print("   Path: aaaa/\(category.lowercased())/questions")
+        print("   Full Path: aaaa/\(formattedCategory)/questions")
         
         questionsRef.getDocuments { [weak self] (snapshot: QuerySnapshot?, error: Error?) in
             guard let self = self else { return }

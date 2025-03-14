@@ -174,31 +174,26 @@ class CategoryCell: UICollectionViewCell {
         containerView.layer.shadowOpacity = 0.1
     }
     
-    func configure(title: String, icon: String, style: Style = .classic, isFavorite: Bool = false) {
+    func configure(title: String, icon: String? = nil, systemImage: String? = nil, style: Style = .classic, isFavorite: Bool = false) {
         self.style = style
         
         if style == .classic {
             applyClassicStyle()
             titleLabel.text = title
-            iconLabel.text = icon
+            if let icon = icon {
+                iconLabel.text = icon
+                iconLabel.isHidden = false
+                iconImageView.isHidden = true
+            } else if let systemImage = systemImage {
+                iconLabel.isHidden = true
+                iconImageView.isHidden = false
+                iconImageView.image = UIImage(systemName: systemImage)?.withRenderingMode(.alwaysTemplate)
+            }
         } else {
             applyModernStyle()
             titleLabel.text = title
-            //subtitleLabel.text = "12 Quizzes"
-            
-            switch title {
-            case "Vehicle":
-                iconImageView.image = UIImage(systemName: "car.fill")
-            case "Science":
-                iconImageView.image = UIImage(systemName: "atom")
-            case "Sports":
-                iconImageView.image = UIImage(systemName: "sportscourt.fill")
-            case "History":
-                iconImageView.image = UIImage(systemName: "book.fill")
-            case "Art":
-                iconImageView.image = UIImage(systemName: "paintpalette.fill")
-            default:
-                iconImageView.image = UIImage(systemName: "questionmark.circle.fill")
+            if let systemImage = systemImage {
+                iconImageView.image = UIImage(systemName: systemImage)?.withRenderingMode(.alwaysTemplate)
             }
         }
         

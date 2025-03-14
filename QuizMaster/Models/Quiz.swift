@@ -7,6 +7,13 @@ enum QuizCategory: String, Codable {
     case sports = "Sports"
     case history = "History"
     case art = "Art"
+    case celebrity = "Celebrity"
+    case videoGames = "Video Games"
+    case generalCulture = "General Culture"
+    case animals = "Animals"
+    case mythology = "Mythology"
+    case computerScience = "Computer Science"
+    case mathematics = "Mathematics"
 }
 
 enum QuizDifficulty: String, Codable {

@@ -125,14 +125,35 @@ class QuizViewModel {
             return nil
         }
         
+        let questionImage = data["question_image"] as? String
+        let optionImages = data["option_images"] as? [String]
+        
         print("📝 Loaded Question:")
         print("   Question:", text)
         print("   Options:", options)
         print("   Correct Answer:", correctAnswer)
+        print("   Question Image:", questionImage ?? "None")
+        print("   Option Images:", optionImages ?? "None")
+        
+        // Detaylı şık resmi kontrolü
+        if let images = optionImages {
+            print("🖼 Option Images Check:")
+            for (index, imageName) in images.enumerated() {
+                let image = UIImage(named: imageName)
+                print("   Şık \(index + 1) - \(imageName): \(image != nil ? "✅ Loaded" : "❌ Not found in Assets")")
+            }
+        }
+        
         print("   Document ID:", document.documentID)
         print("------------------------")
         
-        return Question(text: text, options: options, correctAnswer: correctAnswer)
+        return Question(
+            text: text,
+            options: options,
+            correctAnswer: correctAnswer,
+            questionImage: questionImage,
+            optionImages: optionImages
+        )
     }
     
     // MARK: - Quiz Navigation

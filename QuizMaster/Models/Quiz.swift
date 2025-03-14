@@ -49,11 +49,15 @@ struct Question: Codable {
     let text: String
     let options: [String]
     let correctAnswer: String
+    let questionImage: String?
+    let optionImages: [String]?
     
     enum CodingKeys: String, CodingKey {
         case text = "question"
         case options
         case correctAnswer = "correct_answer"
+        case questionImage = "question_image"
+        case optionImages = "option_images"
     }
     
     static func from(_ data: [String: Any]) -> Question? {
@@ -63,6 +67,12 @@ struct Question: Codable {
             return nil
         }
         
-        return Question(text: text, options: options, correctAnswer: correctAnswer)
+        return Question(
+            text: text,
+            options: options,
+            correctAnswer: correctAnswer,
+            questionImage: data["question_image"] as? String,
+            optionImages: data["option_images"] as? [String]
+        )
     }
 } 

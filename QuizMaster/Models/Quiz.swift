@@ -1,7 +1,7 @@
 import Foundation
 import FirebaseFirestore
 
-enum QuizCategory: String, Codable {
+enum QuizCategory: String, Codable, CaseIterable {
     case vehicle = "Vehicle"
     case science = "Science"
     case sports = "Sports"
@@ -11,12 +11,29 @@ enum QuizCategory: String, Codable {
     case videoGames = "Video Games"
     case generalCulture = "General Culture"
     case animals = "Animals"
-    case mythology = "Mythology"
     case computerScience = "Computer Science"
     case mathematics = "Mathematics"
+    case mythology = "Mythology"
+    
+    var iconName: String {
+        switch self {
+        case .vehicle: return "car.fill"
+        case .science: return "atom"
+        case .sports: return "sportscourt.fill"
+        case .history: return "book.fill"
+        case .art: return "paintpalette.fill"
+        case .celebrity: return "star.fill"
+        case .videoGames: return "gamecontroller.fill"
+        case .generalCulture: return "globe"
+        case .animals: return "pawprint.fill"
+        case .computerScience: return "desktopcomputer"
+        case .mathematics: return "function"
+        case .mythology: return "building.columns.fill"
+        }
+    }
 }
 
-enum QuizDifficulty: String, Codable {
+enum QuizDifficulty: String, Codable, CaseIterable {
     case easy = "Easy"
     case medium = "Medium"
     case hard = "Hard"

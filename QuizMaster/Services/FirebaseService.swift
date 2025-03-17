@@ -1,5 +1,5 @@
 import Foundation
-import Firebase
+import FirebaseCore
 import FirebaseAuth
 import FirebaseFirestore
 import FirebaseStorage
@@ -8,7 +8,7 @@ import GoogleSignIn
 class FirebaseService {
     static let shared = FirebaseService()
     private let auth = Auth.auth()
-    private let db = Firestore.firestore()
+    fileprivate let db = Firestore.firestore()
     private let storage = Storage.storage()
     
     private init() {}
@@ -177,7 +177,65 @@ class FirebaseService {
         }
     }
     
-    // MARK: - Quiz Operations
+    // MARK: - Leaderboard
+    func getLeaderboard(completion: @escaping (Result<[User], Error>) -> Void) {
+        db.collection("users")
+            .order(by: "total_points", descending: true)
+            .limit(to: 100)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                guard let documents = snapshot?.documents else {
+                    completion(.success([]))
+                    return
+                }
+                
+                let users = documents.compactMap { User.from($0) }
+                completion(.success(users))
+            }
+    }
+    
+    // MARK: - Profile Image
+    func uploadProfileImage(userId: String, imageData: Data, completion: @escaping (Result<String, Error>) -> Void) {
+        let storageRef = storage.reference().child("profile_images/\(userId).jpg")
+        
+        storageRef.putData(imageData, metadata: nil) { _, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            storageRef.downloadURL { url, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                guard let downloadURL = url else {
+                    completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get download URL"])))
+                    return
+                }
+                
+                self.db.collection("users").document(userId).updateData([
+                    "photoURL": downloadURL.absoluteString
+                ]) { error in
+                    if let error = error {
+                        completion(.failure(error))
+                        return
+                    }
+                    
+                    completion(.success(downloadURL.absoluteString))
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Quiz Operations
+extension FirebaseService {
     func getQuizzes(category: QuizCategory, difficulty: QuizDifficulty, completion: @escaping (Result<[Quiz], Error>) -> Void) {
         db.collection("quizzes")
             .whereField("category", isEqualTo: category.rawValue)
@@ -238,62 +296,6 @@ class FirebaseService {
         }) { _, error in
             if let error = error {
                 print("Error updating user score: \(error)")
-            }
-        }
-    }
-    
-    // MARK: - Leaderboard
-    func getLeaderboard(completion: @escaping (Result<[User], Error>) -> Void) {
-        db.collection("users")
-            .order(by: "total_points", descending: true)
-            .limit(to: 100)
-            .getDocuments { snapshot, error in
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-                
-                guard let documents = snapshot?.documents else {
-                    completion(.success([]))
-                    return
-                }
-                
-                let users = documents.compactMap { User.from($0) }
-                completion(.success(users))
-            }
-    }
-    
-    // MARK: - Profile Image
-    func uploadProfileImage(userId: String, imageData: Data, completion: @escaping (Result<String, Error>) -> Void) {
-        let storageRef = storage.reference().child("profile_images/\(userId).jpg")
-        
-        storageRef.putData(imageData, metadata: nil) { _, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            
-            storageRef.downloadURL { url, error in
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-                
-                guard let downloadURL = url else {
-                    completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get download URL"])))
-                    return
-                }
-                
-                self.db.collection("users").document(userId).updateData([
-                    "photoURL": downloadURL.absoluteString
-                ]) { error in
-                    if let error = error {
-                        completion(.failure(error))
-                        return
-                    }
-                    
-                    completion(.success(downloadURL.absoluteString))
-                }
             }
         }
     }

@@ -232,10 +232,9 @@ class MainTabBarController: UITabBarController {
     
     @objc private func middleButtonAction() {
         selectedIndex = 2
-        // Yeni quiz oluşturma modalını aç
-        let createQuizVC = UIViewController() // Placeholder - Gerçek view controller'ınızla değiştirin
-        createQuizVC.modalPresentationStyle = .fullScreen
-        present(createQuizVC, animated: true)
+        let addQuestionVC = AddQuestionViewController()
+        addQuestionVC.modalPresentationStyle = .fullScreen
+        present(addQuestionVC, animated: true)
     }
 }
 

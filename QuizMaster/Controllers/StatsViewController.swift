@@ -241,7 +241,23 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         }
         
         let dataSet = PieChartDataSet(entries: entries, label: "Başarı Oranları (%)")
-        dataSet.colors = ChartColorTemplates.material()
+        
+        // Özel renkler tanımla
+        dataSet.colors = [
+            UIColor(red: 0.91, green: 0.31, blue: 0.35, alpha: 1.0),  // Kırmızı
+            UIColor(red: 0.36, green: 0.72, blue: 0.36, alpha: 1.0),  // Yeşil
+            UIColor(red: 0.20, green: 0.60, blue: 0.86, alpha: 1.0),  // Mavi
+            UIColor(red: 0.95, green: 0.61, blue: 0.07, alpha: 1.0),  // Turuncu
+            UIColor(red: 0.61, green: 0.35, blue: 0.71, alpha: 1.0),  // Mor
+            UIColor(red: 0.17, green: 0.63, blue: 0.60, alpha: 1.0),  // Turkuaz
+            UIColor(red: 0.91, green: 0.49, blue: 0.20, alpha: 1.0),  // Koyu Turuncu
+            UIColor(red: 0.49, green: 0.18, blue: 0.56, alpha: 1.0),  // Koyu Mor
+            UIColor(red: 0.20, green: 0.29, blue: 0.37, alpha: 1.0),  // Lacivert
+            UIColor(red: 0.83, green: 0.18, blue: 0.18, alpha: 1.0),  // Bordo
+            UIColor(red: 0.27, green: 0.54, blue: 0.18, alpha: 1.0),  // Koyu Yeşil
+            UIColor(red: 0.35, green: 0.35, blue: 0.35, alpha: 1.0)   // Gri
+        ]
+        
         dataSet.valueTextColor = .black
         dataSet.valueFont = .systemFont(ofSize: 12)
         dataSet.valueFormatter = DefaultValueFormatter(decimals: 1)
@@ -259,7 +275,7 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         let entries = [
             BarChartDataEntry(x: 0, y: Double(stats.correctAnswers)),
             BarChartDataEntry(x: 1, y: Double(stats.wrongAnswers)),
-            BarChartDataEntry(x: 2, y: Double(stats.totalPoints))
+            BarChartDataEntry(x: 2, y: Double(stats.point))
         ]
         
         let dataSet = BarChartDataSet(entries: entries, label: "")

@@ -4,12 +4,12 @@ import FirebaseFirestore
 struct CategoryStats: Codable {
     var correctAnswers: Int
     var wrongAnswers: Int
-    var totalPoints: Int
+    var point: Int
     
     enum CodingKeys: String, CodingKey {
         case correctAnswers = "correct_answers"
         case wrongAnswers = "wrong_answers"
-        case totalPoints = "total_points"
+        case point = "point"
     }
 }
 
@@ -45,7 +45,7 @@ struct User: Codable {
                 categoryStats[category] = CategoryStats(
                     correctAnswers: statData["correct_answers"] as? Int ?? 0,
                     wrongAnswers: statData["wrong_answers"] as? Int ?? 0,
-                    totalPoints: statData["total_points"] as? Int ?? 0
+                    point: statData["point"] as? Int ?? 0
                 )
             }
         }

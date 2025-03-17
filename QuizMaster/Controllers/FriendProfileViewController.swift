@@ -225,9 +225,9 @@ class FriendProfileViewController: UIViewController {
             .getDocuments { [weak self] snapshot, error in
                 guard let documents = snapshot?.documents else { return }
                 
-                if let rank = documents.firstIndex(where: { ($0.data()["id"] as? String) == self?.userId }) {
+                if let rank = documents.firstIndex(where: { $0.documentID == self?.userId }) {
                     DispatchQueue.main.async {
-                        self?.rankLabel.text = "Rank #\(rank + 1)"
+                    self?.rankLabel.text = "Rank #\(rank + 1)"
                     }
                 }
             }

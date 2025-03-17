@@ -80,7 +80,7 @@ class UserViewModel: ObservableObject {
                         parsedStats[category] = CategoryStats(
                             correctAnswers: statData["correct_answers"] as? Int ?? 0,
                             wrongAnswers: statData["wrong_answers"] as? Int ?? 0,
-                            totalPoints: statData["total_points"] as? Int ?? 0
+                            point: statData["point"] as? Int ?? 0
                         )
                     }
                     self.categoryStats = parsedStats

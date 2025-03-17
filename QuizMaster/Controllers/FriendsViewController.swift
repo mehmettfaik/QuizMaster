@@ -19,6 +19,7 @@ class FriendsViewController: UIViewController {
         searchBar.placeholder = "Email ile ara..."
         searchBar.searchBarStyle = .minimal
         searchBar.searchTextField.backgroundColor = .white
+        searchBar.searchTextField.autocapitalizationType = .none // İlk harfi küçük başlat
         searchBar.layer.cornerRadius = 12
         searchBar.clipsToBounds = true
         searchBar.translatesAutoresizingMaskIntoConstraints = false

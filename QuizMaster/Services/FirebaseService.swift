@@ -276,20 +276,29 @@ extension FirebaseService {
             let currentStats = categoryStats[category] as? [String: Any] ?? [
                 "correct_answers": 0,
                 "wrong_answers": 0,
-                "total_points": 0
+                "point": 0
             ]
             
             let updatedStats: [String: Any] = [
                 "correct_answers": (currentStats["correct_answers"] as? Int ?? 0) + correctAnswers,
                 "wrong_answers": (currentStats["wrong_answers"] as? Int ?? 0) + wrongAnswers,
-                "total_points": (currentStats["total_points"] as? Int ?? 0) + points
+                "point": (currentStats["point"] as? Int ?? 0) + points
             ]
             
             categoryStats[category] = updatedStats
             
+            // Calculate total points from all categories
+            var totalPoints = 0
+            for (_, stats) in categoryStats {
+                if let categoryPoints = stats["point"] as? Int {
+                    totalPoints += categoryPoints
+                }
+            }
+            
             transaction.updateData([
                 "quizzes_played": oldPlayed + 1,
-                "category_stats": categoryStats
+                "category_stats": categoryStats,
+                "total_points": totalPoints
             ], forDocument: userRef)
             
             return nil

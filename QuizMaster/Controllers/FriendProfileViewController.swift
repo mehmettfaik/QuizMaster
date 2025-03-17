@@ -182,7 +182,22 @@ class FriendProfileViewController: UIViewController {
                   let data = snapshot?.data(),
                   let name = data["name"] as? String,
                   let avatar = data["avatar"] as? String,
-                  let totalPoints = data["total_points"] as? Int else { return }
+                  let totalPoints = data["total_points"] as? Int,
+                  let quizzesPlayed = data["quizzes_played"] as? Int,
+                  let quizzesWon = data["quizzes_won"] as? Int else { return }
+            
+            // Create user object
+            self.user = User(
+                id: self.userId,
+                email: data["email"] as? String ?? "",
+                name: name,
+                avatar: avatar,
+                totalPoints: totalPoints,
+                quizzesPlayed: quizzesPlayed,
+                quizzesWon: quizzesWon,
+                language: data["language"] as? String ?? "tr",
+                categoryStats: [:]
+            )
             
             DispatchQueue.main.async {
                 self.nameLabel.text = name
@@ -197,6 +212,9 @@ class FriendProfileViewController: UIViewController {
                 
                 // World rank hesapla
                 self.calculateWorldRank(totalPoints: totalPoints)
+                
+                // Rozetleri hesapla
+                self.calculateAchievements(quizzesPlayed: quizzesPlayed, quizzesWon: quizzesWon, totalPoints: totalPoints)
             }
         }
     }
@@ -214,20 +232,130 @@ class FriendProfileViewController: UIViewController {
                 }
             }
     }
+    
+    private func calculateAchievements(quizzesPlayed: Int, quizzesWon: Int, totalPoints: Int) {
+        var badges: [AchievementBadge] = [
+            // Quiz Completion Badges
+            AchievementBadge(
+                id: "quiz_5",
+                title: "Quiz Çaylağı",
+                description: "5 quiz tamamla",
+                icon: "star.fill",
+                isUnlocked: quizzesPlayed >= 5,
+                progress: min(Double(quizzesPlayed) / 5.0, 1.0),
+                requirement: 5,
+                currentValue: quizzesPlayed
+            ),
+            
+            AchievementBadge(
+                id: "quiz_10",
+                title: "Quiz Avcısı",
+                description: "10 quiz tamamla",
+                icon: "star.circle.fill",
+                isUnlocked: quizzesPlayed >= 10,
+                progress: min(Double(quizzesPlayed) / 10.0, 1.0),
+                requirement: 10,
+                currentValue: quizzesPlayed
+            ),
+            
+            AchievementBadge(
+                id: "quiz_20",
+                title: "Quiz Ustası",
+                description: "20 quiz tamamla",
+                icon: "star.square.fill",
+                isUnlocked: quizzesPlayed >= 20,
+                progress: min(Double(quizzesPlayed) / 20.0, 1.0),
+                requirement: 20,
+                currentValue: quizzesPlayed
+            ),
+            
+            // Points Badges
+            AchievementBadge(
+                id: "points_100",
+                title: "Puan Avcısı",
+                description: "100 puan topla",
+                icon: "crown",
+                isUnlocked: totalPoints >= 100,
+                progress: min(Double(totalPoints) / 100.0, 1.0),
+                requirement: 100,
+                currentValue: totalPoints
+            ),
+            
+            AchievementBadge(
+                id: "points_500",
+                title: "Puan Ustası",
+                description: "500 puan topla",
+                icon: "crown.fill",
+                isUnlocked: totalPoints >= 500,
+                progress: min(Double(totalPoints) / 500.0, 1.0),
+                requirement: 500,
+                currentValue: totalPoints
+            ),
+            
+            // Win Badges
+            AchievementBadge(
+                id: "wins_5",
+                title: "Kazanan",
+                description: "5 quiz kazan",
+                icon: "trophy",
+                isUnlocked: quizzesWon >= 5,
+                progress: min(Double(quizzesWon) / 5.0, 1.0),
+                requirement: 5,
+                currentValue: quizzesWon
+            ),
+            
+            AchievementBadge(
+                id: "wins_10",
+                title: "Şampiyon",
+                description: "10 quiz kazan",
+                icon: "trophy.fill",
+                isUnlocked: quizzesWon >= 10,
+                progress: min(Double(quizzesWon) / 10.0, 1.0),
+                requirement: 10,
+                currentValue: quizzesWon
+            )
+        ]
+        
+        self.achievements = badges
+        self.achievementsCollectionView.reloadData()
+    }
+    
+    private var achievements: [AchievementBadge] = []
 }
 
 extension FriendProfileViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 0 // Achievements will be implemented later
+        return achievements.isEmpty ? 1 : achievements.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "AchievementCell", for: indexPath) as! AchievementCell
+        
+        if achievements.isEmpty {
+            cell.configureAsPlaceholder()
+        } else {
+            let achievement = achievements[indexPath.item]
+            cell.configure(with: achievement)
+        }
+        
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let width = (collectionView.bounds.width - 16) / 2
         return CGSize(width: width, height: 120)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard !achievements.isEmpty else { return }
+        
+        let achievement = achievements[indexPath.item]
+        let alert = UIAlertController(
+            title: achievement.title,
+            message: "\(achievement.description)\n\nİlerleme: \(achievement.currentValue)/\(achievement.requirement)",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+        present(alert, animated: true)
     }
 } 

@@ -222,11 +222,11 @@ class ProfileViewController: UIViewController {
         contentView.addSubview(profileImageView)
         contentView.addSubview(nameLabel)
         contentView.addSubview(emailLabel)
+        contentView.addSubview(friendsButton)
         contentView.addSubview(achievementsLabel)
         contentView.addSubview(achievementsCollectionView)
         contentView.addSubview(signOutButton)
         contentView.addSubview(loadingIndicator)
-        contentView.addSubview(friendsButton)
         
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -253,7 +253,12 @@ class ProfileViewController: UIViewController {
             emailLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             emailLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
-            achievementsLabel.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 16),
+            friendsButton.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 24),
+            friendsButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 40),
+            friendsButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -40),
+            friendsButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            achievementsLabel.topAnchor.constraint(equalTo: friendsButton.bottomAnchor, constant: 32),
             achievementsLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             achievementsLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
@@ -269,14 +274,7 @@ class ProfileViewController: UIViewController {
             signOutButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
             
             loadingIndicator.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            loadingIndicator.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            
-            friendsButton.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 16),
-            friendsButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 40),
-            friendsButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -40),
-            friendsButton.heightAnchor.constraint(equalToConstant: 50),
-            
-            achievementsLabel.topAnchor.constraint(equalTo: friendsButton.bottomAnchor, constant: 32)
+            loadingIndicator.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
         ])
         
         // Profil fotoğrafı için placeholder
@@ -386,49 +384,18 @@ class ProfileViewController: UIViewController {
     }
     
     @objc private func friendsButtonTapped() {
-        showFriendsList()
-    }
-    
-    private func showFriendsList() {
-        guard let currentUserId = viewModel.currentUserId else { return }
+        let friendsListVC = FriendsListViewController(userId: viewModel.currentUserId ?? "")
+        let nav = UINavigationController(rootViewController: friendsListVC)
         
-        // Get user's friends list
-        db.collection("users").document(currentUserId).getDocument { [weak self] (snapshot: DocumentSnapshot?, error: Error?) in
-            guard let self = self,
-                  let data = snapshot?.data(),
-                  let friendIds = data["friends"] as? [String] else { return }
-            
-            if friendIds.isEmpty {
-                self.showAlert(title: "Arkadaş Listesi", message: "Henüz arkadaşınız bulunmuyor.")
-                return
-            }
-            
-            let alert = UIAlertController(title: "Arkadaşlarım", message: nil, preferredStyle: .actionSheet)
-            
-            // Get friend details
-            for friendId in friendIds {
-                self.db.collection("users").document(friendId).getDocument { (snapshot: DocumentSnapshot?, error: Error?) in
-                    guard let data = snapshot?.data(),
-                          let name = data["name"] as? String else { return }
-                    
-                    DispatchQueue.main.async {
-                        let action = UIAlertAction(title: name, style: .default) { [weak self] _ in
-                            let friendProfileVC = FriendProfileViewController(userId: friendId)
-                            let nav = UINavigationController(rootViewController: friendProfileVC)
-                            self?.present(nav, animated: true)
-                        }
-                        alert.addAction(action)
-                    }
-                }
-            }
-            
-            alert.addAction(UIAlertAction(title: "İptal", style: .cancel))
-            
-            // Wait a bit for friend details to load
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.present(alert, animated: true)
+        if #available(iOS 15.0, *) {
+            if let sheet = nav.sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 20
             }
         }
+        
+        present(nav, animated: true)
     }
 }
 

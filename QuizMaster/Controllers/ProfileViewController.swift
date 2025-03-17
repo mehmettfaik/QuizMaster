@@ -1,5 +1,6 @@
 import UIKit
 import Combine
+import FirebaseFirestore
 
 // MARK: - UIViewController Extension
 extension UIViewController {
@@ -27,17 +28,17 @@ enum Avatar: String, CaseIterable {
         // Her avatar için özel resim
         switch self {
         case .leo:
-            return UIImage(named: "leo_avatar") ?? UIImage(systemName: systemImage)
+            return UIImage(named: "leo") ?? UIImage(systemName: systemImage)
         case .alex:
-            return UIImage(named: "alex_avatar") ?? UIImage(systemName: systemImage)
+            return UIImage(named: "alex") ?? UIImage(systemName: systemImage)
         case .owen:
-            return UIImage(named: "owen_avatar") ?? UIImage(systemName: systemImage)
+            return UIImage(named: "owen") ?? UIImage(systemName: systemImage)
         case .mia:
-            return UIImage(named: "mia_avatar") ?? UIImage(systemName: systemImage)
+            return UIImage(named: "mia") ?? UIImage(systemName: systemImage)
         case .sophia:
-            return UIImage(named: "sophia_avatar") ?? UIImage(systemName: systemImage)
+            return UIImage(named: "sophia") ?? UIImage(systemName: systemImage)
         case .olivia:
-            return UIImage(named: "olivia_avatar") ?? UIImage(systemName: systemImage)
+            return UIImage(named: "olivia") ?? UIImage(systemName: systemImage)
         }
     }
     
@@ -91,6 +92,7 @@ enum Avatar: String, CaseIterable {
 class ProfileViewController: UIViewController {
     private let viewModel = UserViewModel()
     private var cancellables = Set<AnyCancellable>()
+    private let db = Firestore.firestore()
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -184,6 +186,17 @@ class ProfileViewController: UIViewController {
         return button
     }()
     
+    private let friendsButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Arkadaşlarım", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .primaryPurple
+        button.layer.cornerRadius = 12
+        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationController?.navigationBar.isHidden = false
@@ -213,6 +226,7 @@ class ProfileViewController: UIViewController {
         contentView.addSubview(achievementsCollectionView)
         contentView.addSubview(signOutButton)
         contentView.addSubview(loadingIndicator)
+        contentView.addSubview(friendsButton)
         
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -239,7 +253,7 @@ class ProfileViewController: UIViewController {
             emailLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             emailLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
-            achievementsLabel.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 32),
+            achievementsLabel.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 16),
             achievementsLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             achievementsLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
@@ -255,7 +269,14 @@ class ProfileViewController: UIViewController {
             signOutButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
             
             loadingIndicator.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            loadingIndicator.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+            loadingIndicator.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            
+            friendsButton.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 16),
+            friendsButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 40),
+            friendsButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -40),
+            friendsButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            achievementsLabel.topAnchor.constraint(equalTo: friendsButton.bottomAnchor, constant: 32)
         ])
         
         // Profil fotoğrafı için placeholder
@@ -264,6 +285,9 @@ class ProfileViewController: UIViewController {
         
         // Sign Out action
         signOutButton.addTarget(self, action: #selector(signOutTapped), for: .touchUpInside)
+        
+        // Add action to friends button
+        friendsButton.addTarget(self, action: #selector(friendsButtonTapped), for: .touchUpInside)
     }
     
     private func setupCollectionView() {
@@ -359,6 +383,52 @@ class ProfileViewController: UIViewController {
         let settingsVC = SettingsViewController(viewModel: viewModel)
         let navController = UINavigationController(rootViewController: settingsVC)
         present(navController, animated: true)
+    }
+    
+    @objc private func friendsButtonTapped() {
+        showFriendsList()
+    }
+    
+    private func showFriendsList() {
+        guard let currentUserId = viewModel.currentUserId else { return }
+        
+        // Get user's friends list
+        db.collection("users").document(currentUserId).getDocument { [weak self] (snapshot: DocumentSnapshot?, error: Error?) in
+            guard let self = self,
+                  let data = snapshot?.data(),
+                  let friendIds = data["friends"] as? [String] else { return }
+            
+            if friendIds.isEmpty {
+                self.showAlert(title: "Arkadaş Listesi", message: "Henüz arkadaşınız bulunmuyor.")
+                return
+            }
+            
+            let alert = UIAlertController(title: "Arkadaşlarım", message: nil, preferredStyle: .actionSheet)
+            
+            // Get friend details
+            for friendId in friendIds {
+                self.db.collection("users").document(friendId).getDocument { (snapshot: DocumentSnapshot?, error: Error?) in
+                    guard let data = snapshot?.data(),
+                          let name = data["name"] as? String else { return }
+                    
+                    DispatchQueue.main.async {
+                        let action = UIAlertAction(title: name, style: .default) { [weak self] _ in
+                            let friendProfileVC = FriendProfileViewController(userId: friendId)
+                            let nav = UINavigationController(rootViewController: friendProfileVC)
+                            self?.present(nav, animated: true)
+                        }
+                        alert.addAction(action)
+                    }
+                }
+            }
+            
+            alert.addAction(UIAlertAction(title: "İptal", style: .cancel))
+            
+            // Wait a bit for friend details to load
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.present(alert, animated: true)
+            }
+        }
     }
 }
 

@@ -35,6 +35,10 @@ class UserViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let db = Firestore.firestore()
     
+    var currentUserId: String? {
+        return Auth.auth().currentUser?.uid
+    }
+    
     // MARK: - User Data Loading
     func loadUserProfile() {
         guard let userId = Auth.auth().currentUser?.uid else {

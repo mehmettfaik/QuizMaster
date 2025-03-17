@@ -14,7 +14,7 @@ class FirebaseService {
     private init() {}
     
     // MARK: - Authentication
-    func signUp(email: String, password: String, name: String, completion: @escaping (Result<User, Error>) -> Void) {
+    func signUp(email: String, password: String, name: String, completion: @escaping (Result<QuizMaster.User, Error>) -> Void) {
         auth.createUser(withEmail: email, password: password) { [weak self] result, error in
             if let error = error {
                 completion(.failure(error))
@@ -43,7 +43,7 @@ class FirebaseService {
                     return
                 }
                 
-                let user = User(
+                let user = QuizMaster.User(
                     id: userId,
                     email: email,
                     name: name,
@@ -59,7 +59,7 @@ class FirebaseService {
         }
     }
     
-    func signIn(email: String, password: String, completion: @escaping (Result<User, Error>) -> Void) {
+    func signIn(email: String, password: String, completion: @escaping (Result<QuizMaster.User, Error>) -> Void) {
         auth.signIn(withEmail: email, password: password) { [weak self] result, error in
             if let error = error {
                 completion(.failure(error))
@@ -79,7 +79,7 @@ class FirebaseService {
         try auth.signOut()
     }
     
-    func signInWithGoogle(presenting: UIViewController, completion: @escaping (Result<User, Error>) -> Void) {
+    func signInWithGoogle(presenting: UIViewController, completion: @escaping (Result<QuizMaster.User, Error>) -> Void) {
         guard let clientID = FirebaseApp.app()?.options.clientID else { return }
         
         let config = GIDConfiguration(clientID: clientID)
@@ -141,7 +141,7 @@ class FirebaseService {
                                 return
                             }
                             
-                            let user = User(
+                            let user = QuizMaster.User(
                                 id: userId,
                                 email: authentication.profile?.email ?? "",
                                 name: authentication.profile?.name ?? "",
@@ -161,14 +161,14 @@ class FirebaseService {
     }
     
     // MARK: - User Operations
-    func getUser(userId: String, completion: @escaping (Result<User, Error>) -> Void) {
+    func getUser(userId: String, completion: @escaping (Result<QuizMaster.User, Error>) -> Void) {
         db.collection("users").document(userId).getDocument { snapshot, error in
             if let error = error {
                 completion(.failure(error))
                 return
             }
             
-            guard let snapshot = snapshot, snapshot.exists == true, let user = User.from(snapshot) else {
+            guard let snapshot = snapshot, snapshot.exists == true, let user = QuizMaster.User.from(snapshot) else {
                 completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "User not found"])))
                 return
             }
@@ -178,7 +178,7 @@ class FirebaseService {
     }
     
     // MARK: - Leaderboard
-    func getLeaderboard(completion: @escaping (Result<[User], Error>) -> Void) {
+    func getLeaderboard(completion: @escaping (Result<[QuizMaster.User], Error>) -> Void) {
         db.collection("users")
             .order(by: "total_points", descending: true)
             .limit(to: 100)
@@ -193,7 +193,7 @@ class FirebaseService {
                     return
                 }
                 
-                let users = documents.compactMap { User.from($0) }
+                let users = documents.compactMap { QuizMaster.User.from($0) }
                 completion(.success(users))
             }
     }

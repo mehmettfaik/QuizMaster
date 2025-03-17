@@ -14,6 +14,14 @@ class HomeViewController: UIViewController {
         return label
     }()
     
+    private let friendsButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "person.2.fill"), for: .normal)
+        button.tintColor = .primaryPurple
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
     private let aiCard: UIView = {
         let view = UIView()
         view.backgroundColor = .secondaryPurple
@@ -88,6 +96,7 @@ class HomeViewController: UIViewController {
         view.backgroundColor = .white
         
         view.addSubview(greetingLabel)
+        view.addSubview(friendsButton)
         view.addSubview(aiCard)
         aiCard.addSubview(aiLabel)
         aiCard.addSubview(askAIButton)
@@ -97,7 +106,12 @@ class HomeViewController: UIViewController {
         NSLayoutConstraint.activate([
             greetingLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             greetingLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            greetingLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            greetingLabel.trailingAnchor.constraint(equalTo: friendsButton.leadingAnchor, constant: -8),
+            
+            friendsButton.centerYAnchor.constraint(equalTo: greetingLabel.centerYAnchor),
+            friendsButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            friendsButton.widthAnchor.constraint(equalToConstant: 44),
+            friendsButton.heightAnchor.constraint(equalToConstant: 44),
             
             aiCard.topAnchor.constraint(equalTo: greetingLabel.bottomAnchor, constant: 20),
             aiCard.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
@@ -123,6 +137,7 @@ class HomeViewController: UIViewController {
         ])
         
         askAIButton.addTarget(self, action: #selector(askAIButtonTapped), for: .touchUpInside)
+        friendsButton.addTarget(self, action: #selector(friendsButtonTapped), for: .touchUpInside)
     }
     
     private func setupCollectionView() {
@@ -164,6 +179,13 @@ class HomeViewController: UIViewController {
     
     @objc private func askAIButtonTapped() {
         // TODO: Implement AI chat functionality
+    }
+    
+    @objc private func friendsButtonTapped() {
+        let friendsVC = FriendsViewController()
+        let nav = UINavigationController(rootViewController: friendsVC)
+        nav.modalPresentationStyle = .fullScreen
+        present(nav, animated: true)
     }
 }
 

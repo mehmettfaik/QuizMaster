@@ -121,21 +121,6 @@ class AddQuestionViewController: UIViewController {
         return stack
     }()
     
-    private let correctAnswerLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Correct Answer"
-        label.font = .systemFont(ofSize: 16, weight: .medium)
-        label.textColor = .black
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    private let correctAnswerPicker: UIPickerView = {
-        let picker = UIPickerView()
-        picker.translatesAutoresizingMaskIntoConstraints = false
-        return picker
-    }()
-    
     private let saveButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Save Question", for: .normal)
@@ -154,7 +139,66 @@ class AddQuestionViewController: UIViewController {
         return button
     }()
     
-    private var optionTextFields: [UITextField] = []
+    private class OptionView: UIView {
+        let textField: UITextField
+        let checkmarkButton: UIButton
+        var isSelected: Bool = false {
+            didSet {
+                updateCheckmarkState()
+            }
+        }
+        
+        init(index: Int) {
+            textField = UITextField()
+            textField.placeholder = "Option \(index + 1)"
+            textField.borderStyle = .none
+            textField.backgroundColor = .systemGray6
+            textField.layer.cornerRadius = 12
+            textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
+            textField.leftViewMode = .always
+            
+            checkmarkButton = UIButton(type: .system)
+            let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+            let image = UIImage(systemName: "checkmark.circle", withConfiguration: config)
+            checkmarkButton.setImage(image, for: .normal)
+            checkmarkButton.tintColor = .systemGray3
+            
+            super.init(frame: .zero)
+            
+            addSubview(textField)
+            addSubview(checkmarkButton)
+            
+            textField.translatesAutoresizingMaskIntoConstraints = false
+            checkmarkButton.translatesAutoresizingMaskIntoConstraints = false
+            
+            NSLayoutConstraint.activate([
+                textField.leadingAnchor.constraint(equalTo: leadingAnchor),
+                textField.topAnchor.constraint(equalTo: topAnchor),
+                textField.bottomAnchor.constraint(equalTo: bottomAnchor),
+                textField.trailingAnchor.constraint(equalTo: checkmarkButton.leadingAnchor, constant: -8),
+                
+                checkmarkButton.trailingAnchor.constraint(equalTo: trailingAnchor),
+                checkmarkButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+                checkmarkButton.widthAnchor.constraint(equalToConstant: 44),
+                checkmarkButton.heightAnchor.constraint(equalToConstant: 44),
+                
+                heightAnchor.constraint(equalToConstant: 44)
+            ])
+        }
+        
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+        
+        private func updateCheckmarkState() {
+            let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+            let image = UIImage(systemName: isSelected ? "checkmark.circle.fill" : "checkmark.circle", withConfiguration: config)
+            checkmarkButton.setImage(image, for: .normal)
+            checkmarkButton.tintColor = isSelected ? .primaryPurple : .systemGray3
+        }
+    }
+    
+    private var optionViews: [OptionView] = []
     private let categories = QuizCategory.allCases.sorted { $0.rawValue < $1.rawValue }
     
     override func viewDidLoad() {
@@ -183,15 +227,14 @@ class AddQuestionViewController: UIViewController {
         formContainerView.addSubview(questionTextView)
         formContainerView.addSubview(optionsLabel)
         formContainerView.addSubview(optionsStackView)
-        formContainerView.addSubview(correctAnswerLabel)
-        formContainerView.addSubview(correctAnswerPicker)
         formContainerView.addSubview(saveButton)
         
-        // Add 4 option text fields
+        // Add 4 option views
         for i in 0..<4 {
-            let textField = createOptionTextField(index: i)
-            optionTextFields.append(textField)
-            optionsStackView.addArrangedSubview(textField)
+            let optionView = OptionView(index: i)
+            optionView.checkmarkButton.addTarget(self, action: #selector(checkmarkButtonTapped(_:)), for: .touchUpInside)
+            optionViews.append(optionView)
+            optionsStackView.addArrangedSubview(optionView)
         }
         
         NSLayoutConstraint.activate([
@@ -254,15 +297,7 @@ class AddQuestionViewController: UIViewController {
             optionsStackView.leadingAnchor.constraint(equalTo: formContainerView.leadingAnchor, constant: 20),
             optionsStackView.trailingAnchor.constraint(equalTo: formContainerView.trailingAnchor, constant: -20),
             
-            correctAnswerLabel.topAnchor.constraint(equalTo: optionsStackView.bottomAnchor, constant: 20),
-            correctAnswerLabel.leadingAnchor.constraint(equalTo: formContainerView.leadingAnchor, constant: 20),
-            
-            correctAnswerPicker.topAnchor.constraint(equalTo: correctAnswerLabel.bottomAnchor, constant: 8),
-            correctAnswerPicker.leadingAnchor.constraint(equalTo: formContainerView.leadingAnchor, constant: 20),
-            correctAnswerPicker.trailingAnchor.constraint(equalTo: formContainerView.trailingAnchor, constant: -20),
-            correctAnswerPicker.heightAnchor.constraint(equalToConstant: 120),
-            
-            saveButton.topAnchor.constraint(equalTo: correctAnswerPicker.bottomAnchor, constant: 30),
+            saveButton.topAnchor.constraint(equalTo: optionsStackView.bottomAnchor, constant: 30),
             saveButton.leadingAnchor.constraint(equalTo: formContainerView.leadingAnchor, constant: 20),
             saveButton.trailingAnchor.constraint(equalTo: formContainerView.trailingAnchor, constant: -20),
             saveButton.heightAnchor.constraint(equalToConstant: 50),
@@ -270,24 +305,9 @@ class AddQuestionViewController: UIViewController {
         ])
     }
     
-    private func createOptionTextField(index: Int) -> UITextField {
-        let textField = UITextField()
-        textField.placeholder = "Option \(index + 1)"
-        textField.borderStyle = .none
-        textField.backgroundColor = .systemGray6
-        textField.layer.cornerRadius = 12
-        textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
-        textField.leftViewMode = .always
-        textField.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        return textField
-    }
-    
     private func setupDelegates() {
         categoryPicker.delegate = self
         categoryPicker.dataSource = self
-        correctAnswerPicker.delegate = self
-        correctAnswerPicker.dataSource = self
     }
     
     private func setupActions() {
@@ -308,6 +328,16 @@ class AddQuestionViewController: UIViewController {
         }
     }
     
+    @objc private func checkmarkButtonTapped(_ sender: UIButton) {
+        // Find the tapped option view
+        if let tappedView = sender.superview as? OptionView {
+            // Deselect all other options
+            optionViews.forEach { $0.isSelected = false }
+            // Select the tapped option
+            tappedView.isSelected = true
+        }
+    }
+    
     @objc private func saveButtonTapped() {
         // Show loading state
         saveButton.isEnabled = false
@@ -315,18 +345,25 @@ class AddQuestionViewController: UIViewController {
         
         // Validate inputs
         guard let question = questionTextView.text, !question.isEmpty,
-              let selectedCategory = categories[safe: categoryPicker.selectedRow(inComponent: 0)]?.rawValue,
-              let correctAnswer = optionTextFields[safe: correctAnswerPicker.selectedRow(inComponent: 0)]?.text,
-              !correctAnswer.isEmpty else {
+              let selectedCategory = categories[safe: categoryPicker.selectedRow(inComponent: 0)]?.rawValue else {
             presentAlert(title: "Error", message: "Please fill in all fields")
             saveButton.isEnabled = true
             saveButton.setTitle("Save Question", for: .normal)
             return
         }
         
-        let options = optionTextFields.compactMap { $0.text }.filter { !$0.isEmpty }
+        let options = optionViews.compactMap { $0.textField.text }.filter { !$0.isEmpty }
         guard options.count == 4 else {
             presentAlert(title: "Error", message: "Please fill in all options")
+            saveButton.isEnabled = true
+            saveButton.setTitle("Save Question", for: .normal)
+            return
+        }
+        
+        // Get the selected correct answer
+        guard let selectedIndex = optionViews.firstIndex(where: { $0.isSelected }),
+              let correctAnswer = options[safe: selectedIndex] else {
+            presentAlert(title: "Error", message: "Please select the correct answer")
             saveButton.isEnabled = true
             saveButton.setTitle("Save Question", for: .normal)
             return
@@ -384,19 +421,11 @@ extension AddQuestionViewController: UIPickerViewDelegate, UIPickerViewDataSourc
     }
     
     func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        if pickerView == categoryPicker {
-            return categories.count
-        } else {
-            return optionTextFields.count
-        }
+        return categories.count
     }
     
     func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
-        if pickerView == categoryPicker {
-            return categories[row].rawValue
-        } else {
-            return "Option \(row + 1)"
-        }
+        return categories[row].rawValue
     }
 }
 

@@ -53,6 +53,8 @@ class FriendsViewController: UIViewController {
     private var friendIds: Set<String> = []
     private let db = Firestore.firestore()
     
+    private var tableViewTopConstraint: NSLayoutConstraint?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -70,16 +72,15 @@ class FriendsViewController: UIViewController {
         view.addSubview(emptyStateLabel)
         
         NSLayoutConstraint.activate([
-            segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 4),
             segmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             segmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             segmentedControl.heightAnchor.constraint(equalToConstant: 40),
             
-            searchBar.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 12),
+            searchBar.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 8),
             searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
-            tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 8),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -88,7 +89,21 @@ class FriendsViewController: UIViewController {
             emptyStateLabel.centerYAnchor.constraint(equalTo: tableView.centerYAnchor)
         ])
         
+        updateTableViewTopConstraint()
         segmentedControl.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
+    }
+    
+    private func updateTableViewTopConstraint() {
+        tableViewTopConstraint?.isActive = false
+        
+        if segmentedControl.selectedSegmentIndex == 0 {
+            // Arkadaş Ekle sekmesinde SearchBar ile TableView arasında 8pt boşluk
+            tableViewTopConstraint = tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 8)
+        } else {
+            // İstekler sekmesinde SegmentedControl ile TableView arasında 8pt boşluk
+            tableViewTopConstraint = tableView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 12)
+        }
+        tableViewTopConstraint?.isActive = true
     }
     
     private func setupDelegates() {
@@ -116,11 +131,18 @@ class FriendsViewController: UIViewController {
     
     @objc private func segmentChanged() {
         searchBar.isHidden = segmentedControl.selectedSegmentIndex == 1
+        updateTableViewTopConstraint() // Constraint'i güncelle
+        
         if segmentedControl.selectedSegmentIndex == 1 {
             loadFriendRequests()
         } else {
             users.removeAll()
             tableView.reloadData()
+        }
+        
+        // Animasyonlu geçiş
+        UIView.animate(withDuration: 0.2) {
+            self.view.layoutIfNeeded()
         }
     }
     
@@ -316,7 +338,6 @@ extension FriendsViewController: UITableViewDelegate, UITableViewDataSource {
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: FriendRequestCell.identifier, for: indexPath) as! FriendRequestCell
             let request = friendRequests[indexPath.row]
-            cell.delegate = self
             cell.configure(with: request)
             return cell
         }
@@ -372,102 +393,5 @@ extension FriendsViewController: UITableViewDelegate, UITableViewDataSource {
             emptyStateLabel.isHidden = !friendRequests.isEmpty
             emptyStateLabel.text = "Bekleyen istek yok"
         }
-    }
-}
-
-extension FriendsViewController: FriendRequestCellDelegate {
-    func didTapAccept(for request: FriendRequest) {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
-        
-        // UI'da loading göster
-        showLoadingView()
-        
-        // Önce arkadaş listelerine ekle
-        let batch = db.batch()
-        
-        // Current user'ın friends array'ine ekle
-        let currentUserRef = db.collection("users").document(currentUserId)
-        batch.updateData([
-            "friends": FieldValue.arrayUnion([request.senderId])
-        ], forDocument: currentUserRef)
-        
-        // Gönderen kişinin friends array'ine ekle
-        let senderRef = db.collection("users").document(request.senderId)
-        batch.updateData([
-            "friends": FieldValue.arrayUnion([currentUserId])
-        ], forDocument: senderRef)
-        
-        // İsteği kabul edildi olarak işaretle
-        let requestRef = db.collection("friendRequests").document(request.id)
-        batch.updateData([
-            "status": "accepted"
-        ], forDocument: requestRef)
-        
-        // Batch işlemini gerçekleştir
-        batch.commit { [weak self] error in
-            DispatchQueue.main.async {
-                self?.hideLoadingView()
-                
-                if let error = error {
-                    self?.showAlert(title: "Hata", message: "İstek kabul edilirken bir hata oluştu: \(error.localizedDescription)")
-                    return
-                }
-                
-                // UI'ı güncelle
-                if let index = self?.friendRequests.firstIndex(where: { $0.id == request.id }) {
-                    self?.friendRequests.remove(at: index)
-                    self?.tableView.reloadData()
-                }
-                
-                // Arkadaş listesini yenile
-                self?.checkFriendshipStatus()
-            }
-        }
-    }
-    
-    func didTapReject(for request: FriendRequest) {
-        // UI'da loading göster
-        showLoadingView()
-        
-        // İsteği reddet
-        let requestRef = db.collection("friendRequests").document(request.id)
-        requestRef.updateData([
-            "status": "rejected"
-        ]) { [weak self] error in
-            DispatchQueue.main.async {
-                self?.hideLoadingView()
-                
-                if let error = error {
-                    self?.showAlert(title: "Hata", message: "İstek reddedilirken bir hata oluştu: \(error.localizedDescription)")
-                    return
-                }
-                
-                // UI'ı güncelle
-                if let index = self?.friendRequests.firstIndex(where: { $0.id == request.id }) {
-                    self?.friendRequests.remove(at: index)
-                    self?.tableView.reloadData()
-                }
-            }
-        }
-    }
-    
-    private func showLoadingView() {
-        // LoadingView'ı göster
-        let loadingView = UIView(frame: view.bounds)
-        loadingView.backgroundColor = UIColor.black.withAlphaComponent(0.3)
-        loadingView.tag = 999
-        
-        let indicator = UIActivityIndicatorView(style: .large)
-        indicator.color = .white
-        indicator.center = loadingView.center
-        indicator.startAnimating()
-        
-        loadingView.addSubview(indicator)
-        view.addSubview(loadingView)
-    }
-    
-    private func hideLoadingView() {
-        // LoadingView'ı kaldır
-        view.subviews.first(where: { $0.tag == 999 })?.removeFromSuperview()
     }
 } 

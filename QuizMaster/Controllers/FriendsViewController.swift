@@ -322,6 +322,16 @@ extension FriendsViewController: UISearchBarDelegate {
     }
 }
 
+extension FriendsViewController: FriendRequestCellDelegate {
+    func didTapAccept(for request: FriendRequest) {
+        handleFriendRequest(request, accepted: true)
+    }
+    
+    func didTapReject(for request: FriendRequest) {
+        handleFriendRequest(request, accepted: false)
+    }
+}
+
 extension FriendsViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return segmentedControl.selectedSegmentIndex == 0 ? users.count : friendRequests.count
@@ -338,6 +348,7 @@ extension FriendsViewController: UITableViewDelegate, UITableViewDataSource {
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: FriendRequestCell.identifier, for: indexPath) as! FriendRequestCell
             let request = friendRequests[indexPath.row]
+            cell.delegate = self // Delegate'i atıyoruz
             cell.configure(with: request)
             return cell
         }
@@ -346,6 +357,7 @@ extension FriendsViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
+        // Sadece Arkadaş Ekle sekmesinde uyarı göster
         if segmentedControl.selectedSegmentIndex == 0 {
             let user = users[indexPath.row]
             
@@ -361,20 +373,6 @@ extension FriendsViewController: UITableViewDelegate, UITableViewDataSource {
             alert.addAction(UIAlertAction(title: "İptal", style: .cancel))
             alert.addAction(UIAlertAction(title: "Gönder", style: .default) { [weak self] _ in
                 self?.sendFriendRequest(to: user)
-            })
-            
-            present(alert, animated: true)
-        } else {
-            let request = friendRequests[indexPath.row]
-            let alert = UIAlertController(title: "Arkadaşlık İsteği",
-                                        message: "\(request.senderEmail) kullanıcısından gelen arkadaşlık isteğini yanıtlayın.",
-                                        preferredStyle: .alert)
-            
-            alert.addAction(UIAlertAction(title: "Reddet", style: .destructive) { [weak self] _ in
-                self?.handleFriendRequest(request, accepted: false)
-            })
-            alert.addAction(UIAlertAction(title: "Kabul Et", style: .default) { [weak self] _ in
-                self?.handleFriendRequest(request, accepted: true)
             })
             
             present(alert, animated: true)

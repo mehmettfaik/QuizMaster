@@ -25,16 +25,39 @@ class HomeViewController: UIViewController {
     private let aiCard: UIView = {
         let view = UIView()
         view.backgroundColor = .secondaryPurple
-        view.layer.cornerRadius = 12
+        view.layer.cornerRadius = 20
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOffset = CGSize(width: 0, height: 4)
+        view.layer.shadowRadius = 12
+        view.layer.shadowOpacity = 0.1
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
     
-    private let aiLabel: UILabel = {
+    private let aiIconImageView: UIImageView = {
+        let imageView = UIImageView()
+        let config = UIImage.SymbolConfiguration(pointSize: 28, weight: .medium)
+        imageView.image = UIImage(systemName: "sparkles.square.filled.on.square", withConfiguration: config)
+        imageView.tintColor = .white
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
+    }()
+    
+    private let aiNameLabel: UILabel = {
         let label = UILabel()
-        label.text = "Yapay zeka ismi\n\nOur artificial intelligence knows everything, you should still try your luck :)"
-        label.numberOfLines = 0
+        label.text = "QuizGPT"
+        label.font = .systemFont(ofSize: 24, weight: .bold)
         label.textColor = .white
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let aiDescriptionLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Your AI quiz companion. Get instant help \nand explore new topics! ✨"
+        label.numberOfLines = 4
+        label.textColor = UIColor.white.withAlphaComponent(0.9)
         label.font = .systemFont(ofSize: 16)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -45,7 +68,20 @@ class HomeViewController: UIViewController {
         button.setTitle("Ask AI", for: .normal)
         button.backgroundColor = .white
         button.setTitleColor(.primaryPurple, for: .normal)
-        button.layer.cornerRadius = 8
+        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        button.layer.cornerRadius = 20
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOffset = CGSize(width: 0, height: 2)
+        button.layer.shadowRadius = 4
+        button.layer.shadowOpacity = 0.1
+        
+        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+        let image = UIImage(systemName: "arrow.forward", withConfiguration: config)
+        button.setImage(image, for: .normal)
+        button.tintColor = .primaryPurple
+        button.semanticContentAttribute = .forceRightToLeft
+        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: -8)
+        
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -98,8 +134,12 @@ class HomeViewController: UIViewController {
         view.addSubview(greetingLabel)
         view.addSubview(friendsButton)
         view.addSubview(aiCard)
-        aiCard.addSubview(aiLabel)
+        
+        aiCard.addSubview(aiIconImageView)
+        aiCard.addSubview(aiNameLabel)
+        aiCard.addSubview(aiDescriptionLabel)
         aiCard.addSubview(askAIButton)
+        
         view.addSubview(categoriesLabel)
         view.addSubview(categoriesCollectionView)
         
@@ -116,16 +156,25 @@ class HomeViewController: UIViewController {
             aiCard.topAnchor.constraint(equalTo: greetingLabel.bottomAnchor, constant: 20),
             aiCard.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             aiCard.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            aiCard.heightAnchor.constraint(equalToConstant: 150),
+            aiCard.heightAnchor.constraint(equalToConstant: 200),
             
-            aiLabel.topAnchor.constraint(equalTo: aiCard.topAnchor, constant: 16),
-            aiLabel.leadingAnchor.constraint(equalTo: aiCard.leadingAnchor, constant: 16),
-            aiLabel.trailingAnchor.constraint(equalTo: aiCard.trailingAnchor, constant: -16),
+            aiIconImageView.topAnchor.constraint(equalTo: aiCard.topAnchor, constant: 24),
+            aiIconImageView.leadingAnchor.constraint(equalTo: aiCard.leadingAnchor, constant: 24),
+            aiIconImageView.widthAnchor.constraint(equalToConstant: 36),
+            aiIconImageView.heightAnchor.constraint(equalToConstant: 36),
             
-            askAIButton.bottomAnchor.constraint(equalTo: aiCard.bottomAnchor, constant: -16),
-            askAIButton.leadingAnchor.constraint(equalTo: aiCard.leadingAnchor, constant: 16),
+            aiNameLabel.leadingAnchor.constraint(equalTo: aiIconImageView.trailingAnchor, constant: 12),
+            aiNameLabel.centerYAnchor.constraint(equalTo: aiIconImageView.centerYAnchor),
+            
+            aiDescriptionLabel.topAnchor.constraint(equalTo: aiIconImageView.bottomAnchor, constant: 16),
+            aiDescriptionLabel.leadingAnchor.constraint(equalTo: aiCard.leadingAnchor, constant: 24),
+            aiDescriptionLabel.trailingAnchor.constraint(equalTo: aiCard.trailingAnchor, constant: -24),
+            
+            askAIButton.topAnchor.constraint(equalTo: aiDescriptionLabel.bottomAnchor, constant: 16),
+            askAIButton.leadingAnchor.constraint(equalTo: aiCard.leadingAnchor, constant: 24),
             askAIButton.heightAnchor.constraint(equalToConstant: 40),
-            askAIButton.widthAnchor.constraint(equalToConstant: 100),
+            askAIButton.widthAnchor.constraint(equalToConstant: 140),
+            askAIButton.bottomAnchor.constraint(equalTo: aiCard.bottomAnchor, constant: -24),
             
             categoriesLabel.topAnchor.constraint(equalTo: aiCard.bottomAnchor, constant: 30),
             categoriesLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),

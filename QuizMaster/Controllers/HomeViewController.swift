@@ -178,7 +178,9 @@ class HomeViewController: UIViewController {
     }
     
     @objc private func askAIButtonTapped() {
-        // TODO: Implement AI chat functionality
+        let chatVC = ChatViewController()
+        chatVC.modalPresentationStyle = .overFullScreen
+        present(chatVC, animated: true)
     }
     
     @objc private func friendsButtonTapped() {

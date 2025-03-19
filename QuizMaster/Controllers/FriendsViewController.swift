@@ -157,6 +157,8 @@ class FriendsViewController: UIViewController {
             return
         }
         
+        guard let currentUser = Auth.auth().currentUser else { return }
+        
         let endPrefix = prefix + "\u{f8ff}"
         db.collection("users")
             .whereField("email", isGreaterThanOrEqualTo: prefix)
@@ -165,6 +167,9 @@ class FriendsViewController: UIViewController {
                 guard let self = self, let documents = snapshot?.documents else { return }
                 
                 self.users = documents.compactMap { document -> FriendUser? in
+                    // Mevcut kullanıcıyı sonuçlardan çıkar
+                    guard document.documentID != currentUser.uid else { return nil }
+                    
                     let data = document.data()
                     guard let email = data["email"] as? String,
                           let name = data["name"] as? String else { return nil }
@@ -174,6 +179,9 @@ class FriendsViewController: UIViewController {
                 
                 // Kullanıcıların arkadaşlık durumlarını kontrol et
                 self.checkFriendshipStatus()
+                
+                // Boş durum kontrolü
+                self.updateEmptyState()
             }
     }
     
@@ -259,6 +267,12 @@ class FriendsViewController: UIViewController {
     
     private func sendFriendRequest(to user: FriendUser) {
         guard let currentUser = Auth.auth().currentUser else { return }
+        
+        // Kendine arkadaşlık isteği göndermeyi engelle
+        guard user.id != currentUser.uid else {
+            showAlert(title: "Hata", message: "Kendinize arkadaşlık isteği gönderemezsiniz.")
+            return
+        }
         
         let requestData: [String: Any] = [
             "senderId": currentUser.uid,

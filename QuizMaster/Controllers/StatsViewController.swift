@@ -2,10 +2,42 @@ import UIKit
 import DGCharts
 import Combine
 import Charts
+import FirebaseAuth
 
-class StatsViewController: UIViewController, ChartViewDelegate {
+class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDelegate, UITableViewDataSource {
     private let viewModel = UserViewModel()
     private var cancellables = Set<AnyCancellable>()
+    
+    private let segmentedControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["İstatistikler", "Liderlik Tablosu"])
+        control.selectedSegmentIndex = 0
+        control.translatesAutoresizingMaskIntoConstraints = false
+        return control
+    }()
+    
+    private let leaderboardView: UIView = {
+        let view = UIView()
+        view.isHidden = true
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private let leaderboardTableView: UITableView = {
+        let tableView = UITableView()
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.separatorStyle = .none
+        tableView.backgroundColor = .clear
+        return tableView
+    }()
+    
+    private let timeFilterControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["Bu Hafta", "Bu Ay", "Tüm Zamanlar"])
+        control.selectedSegmentIndex = 0
+        control.translatesAutoresizingMaskIntoConstraints = false
+        return control
+    }()
+    
+    private var leaderboardUsers: [User] = []
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -29,64 +61,64 @@ class StatsViewController: UIViewController, ChartViewDelegate {
     }()
     
     private let pointsLabel: UILabel = {
-        let label = UILabel()
-        label.text = "POINTS"
-        label.font = .systemFont(ofSize: 14)
-        label.textColor = .white
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+            let label = UILabel()
+            label.text = "POINTS"
+            label.font = .systemFont(ofSize: 14)
+            label.textColor = .white
+            label.textAlignment = .center
+            label.translatesAutoresizingMaskIntoConstraints = false
+            return label
+        }()
     
     private let pointsValueLabel: UILabel = {
-        let label = UILabel()
-        label.text = "0"
-        label.font = .systemFont(ofSize: 32, weight: .bold)
-        label.textColor = .white
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+            let label = UILabel()
+            label.text = "0"
+            label.font = .systemFont(ofSize: 32, weight: .bold)
+            label.textColor = .white
+            label.textAlignment = .center
+            label.translatesAutoresizingMaskIntoConstraints = false
+            return label
+        }()
     
     private let quizzesLabel: UILabel = {
-        let label = UILabel()
-        label.text = "QUIZZES"
-        label.font = .systemFont(ofSize: 14)
-        label.textColor = .white
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+            let label = UILabel()
+            label.text = "QUIZZES"
+            label.font = .systemFont(ofSize: 14)
+            label.textColor = .white
+            label.textAlignment = .center
+            label.translatesAutoresizingMaskIntoConstraints = false
+            return label
+        }()
     
     private let quizzesValueLabel: UILabel = {
-        let label = UILabel()
-        label.text = "0"
-        label.font = .systemFont(ofSize: 28, weight: .bold)
-        label.textColor = .white
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+            let label = UILabel()
+            label.text = "0"
+            label.font = .systemFont(ofSize: 28, weight: .bold)
+            label.textColor = .white
+            label.textAlignment = .center
+            label.translatesAutoresizingMaskIntoConstraints = false
+            return label
+        }()
     
     private let rankLabel: UILabel = {
-        let label = UILabel()
-        label.text = "WORLD RANK"
-        label.font = .systemFont(ofSize: 14)
-        label.textColor = .white
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+            let label = UILabel()
+            label.text = "WORLD RANK"
+            label.font = .systemFont(ofSize: 14)
+            label.textColor = .white
+            label.textAlignment = .center
+            label.translatesAutoresizingMaskIntoConstraints = false
+            return label
+        }()
     
     private let rankValueLabel: UILabel = {
-        let label = UILabel()
-        label.text = "#0"
-        label.font = .systemFont(ofSize: 32, weight: .bold)
-        label.textColor = .white
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+            let label = UILabel()
+            label.text = "#0"
+            label.font = .systemFont(ofSize: 32, weight: .bold)
+            label.textColor = .white
+            label.textAlignment = .center
+            label.translatesAutoresizingMaskIntoConstraints = false
+            return label
+        }()
     
     private let loadingIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
@@ -133,19 +165,24 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         setupBindings()
         setupPieChart()
         setupLineChart()
+        
+        // Set initial view state
+        statsView.isHidden = false
+        leaderboardView.isHidden = true
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         viewModel.loadUserProfile()
+        
+        // Load leaderboard if we're on the leaderboard tab
+        if segmentedControl.selectedSegmentIndex == 1 {
+            loadLeaderboard()
+        }
     }
     
     private func setupUI() {
         view.backgroundColor = .white
-        
-        // Add scroll view and content view
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
         
         // Add header view directly to main view (outside scroll area)
         view.addSubview(headerView)
@@ -156,6 +193,13 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         headerView.addSubview(rankLabel)
         headerView.addSubview(rankValueLabel)
         
+        // Add segmented control below header
+        view.addSubview(segmentedControl)
+        
+        // Add scroll view and content view
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        
         // Add loading indicator to the main view so it's always visible
         view.addSubview(loadingIndicator)
         
@@ -165,22 +209,21 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         statsView.addSubview(categoryLabel)
         statsView.addSubview(lineChartView)
         
-        // Setup scroll view and content view constraints
+        // Add leaderboard view
+        view.addSubview(leaderboardView)
+        leaderboardView.addSubview(timeFilterControl)
+        leaderboardView.addSubview(leaderboardTableView)
+        
+        // Setup leaderboard table view
+        leaderboardTableView.delegate = self
+        leaderboardTableView.dataSource = self
+        leaderboardTableView.register(LeaderboardCell.self, forCellReuseIdentifier: LeaderboardCell.identifier)
+        
+        // Add target to segmented control
+        segmentedControl.addTarget(self, action: #selector(segmentedControlValueChanged), for: .valueChanged)
+        timeFilterControl.addTarget(self, action: #selector(timeFilterValueChanged), for: .valueChanged)
+        
         NSLayoutConstraint.activate([
-            // Scroll view constraints
-            scrollView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor,constant: 100),
-            
-            // Content view constraints
-            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-            // Content view height will be determined by its subviews
-            
             // Header view constraints
             headerView.topAnchor.constraint(equalTo: view.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -190,33 +233,72 @@ class StatsViewController: UIViewController, ChartViewDelegate {
             loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             
+            // Points section constraints
             pointsLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
             pointsLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             
             pointsValueLabel.leadingAnchor.constraint(equalTo: pointsLabel.leadingAnchor),
             pointsValueLabel.topAnchor.constraint(equalTo: pointsLabel.bottomAnchor, constant: 4),
             
+            // Quizzes section constraints
             quizzesLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             quizzesLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor, constant: 10),
             
             quizzesValueLabel.centerXAnchor.constraint(equalTo: quizzesLabel.centerXAnchor),
             quizzesValueLabel.topAnchor.constraint(equalTo: quizzesLabel.bottomAnchor, constant: 4),
             
+            // Rank section constraints
             rankLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
             rankLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             
             rankValueLabel.trailingAnchor.constraint(equalTo: rankLabel.trailingAnchor),
             rankValueLabel.topAnchor.constraint(equalTo: rankLabel.bottomAnchor, constant: 4),
             
+            // Segmented control constraints - moved closer to header
+            segmentedControl.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 8),
+            segmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            segmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            // Scroll view constraints
+            scrollView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 16),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            // Content view constraints
+            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            
+            // Stats view constraints
             statsView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
             statsView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             statsView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             statsView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
             
+            // Leaderboard view constraints
+            leaderboardView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 16),
+            leaderboardView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            leaderboardView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            leaderboardView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            // Time filter control constraints
+            timeFilterControl.topAnchor.constraint(equalTo: leaderboardView.topAnchor, constant: 16),
+            timeFilterControl.leadingAnchor.constraint(equalTo: leaderboardView.leadingAnchor, constant: 16),
+            timeFilterControl.trailingAnchor.constraint(equalTo: leaderboardView.trailingAnchor, constant: -16),
+            
+            // Leaderboard table view constraints
+            leaderboardTableView.topAnchor.constraint(equalTo: timeFilterControl.bottomAnchor, constant: 16),
+            leaderboardTableView.leadingAnchor.constraint(equalTo: leaderboardView.leadingAnchor),
+            leaderboardTableView.trailingAnchor.constraint(equalTo: leaderboardView.trailingAnchor),
+            leaderboardTableView.bottomAnchor.constraint(equalTo: leaderboardView.bottomAnchor),
+            
             pieChartView.topAnchor.constraint(equalTo: statsView.topAnchor, constant: 10),
             pieChartView.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
             pieChartView.trailingAnchor.constraint(equalTo: statsView.trailingAnchor, constant: -20),
-            pieChartView.heightAnchor.constraint(equalTo: pieChartView.widthAnchor,multiplier: 1.2),
+            pieChartView.heightAnchor.constraint(equalTo: pieChartView.widthAnchor, multiplier: 1.2),
             
             categoryLabel.topAnchor.constraint(equalTo: pieChartView.bottomAnchor, constant: 20),
             categoryLabel.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
@@ -230,10 +312,65 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         ])
         
         // Set a height constraint for the content view based on the statsView
-        // This ensures the scroll view knows the content size
         let contentHeightConstraint = contentView.heightAnchor.constraint(greaterThanOrEqualTo: view.heightAnchor)
         contentHeightConstraint.priority = .defaultLow
         contentHeightConstraint.isActive = true
+    }
+    
+    @objc private func segmentedControlValueChanged() {
+        statsView.isHidden = segmentedControl.selectedSegmentIndex == 1
+        leaderboardView.isHidden = segmentedControl.selectedSegmentIndex == 0
+        
+        if segmentedControl.selectedSegmentIndex == 1 {
+            loadLeaderboard()
+        }
+    }
+    
+    @objc private func timeFilterValueChanged() {
+        loadLeaderboard()
+    }
+    
+    private func loadLeaderboard() {
+        loadingIndicator.startAnimating()
+        
+        FirebaseService.shared.getLeaderboard { [weak self] result in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                self.loadingIndicator.stopAnimating()
+                
+                switch result {
+                case .success(let users):
+                    self.leaderboardUsers = users
+                    self.leaderboardTableView.reloadData()
+                case .failure(let error):
+                    // Show error alert
+                    let alert = UIAlertController(
+                        title: "Hata",
+                        message: "Liderlik tablosu yüklenirken bir hata oluştu: \(error.localizedDescription)",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+                    self.present(alert, animated: true)
+                }
+            }
+        }
+    }
+    
+    // MARK: - UITableViewDelegate & UITableViewDataSource
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return leaderboardUsers.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: LeaderboardCell.identifier, for: indexPath) as! LeaderboardCell
+        let user = leaderboardUsers[indexPath.row]
+        cell.configure(with: user, rank: indexPath.row + 1)
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 88 // Cell height + padding
     }
     
     private func setupPieChart() {

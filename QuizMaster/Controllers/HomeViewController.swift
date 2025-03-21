@@ -61,22 +61,49 @@ class HomeViewController: UIViewController {
     
     private let aiTitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "Yapay zeka ismi"
-        label.font = .systemFont(ofSize: 18, weight: .medium)
-        label.textColor = .white
+        label.text = "QuizGPT"
+        label.font = .systemFont(ofSize: 24, weight: .bold) // Daha büyük ve çarpıcı font
+        label.textColor = UIColor.white
+        label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
+
+        // Gradient Text
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.colors = [
+            UIColor(red: 255/255, green: 215/255, blue: 0/255, alpha: 1).cgColor, // Açık Mor
+            UIColor(red: 0.58, green: 0.40, blue: 0.93, alpha: 1.0).cgColor  // Koyu Mor
+        ]
+        gradientLayer.startPoint = CGPoint(x: 0, y: 0)
+        gradientLayer.endPoint = CGPoint(x: 1, y: 1)
+        gradientLayer.frame = CGRect(x: 0, y: 0, width: 300, height: 40)
+
+        let textImage = UIGraphicsImageRenderer(size: gradientLayer.frame.size).image { context in
+            gradientLayer.render(in: context.cgContext)
+        }
+        label.textColor = UIColor(patternImage: textImage) // Gradient rengi yazıya uygula
+
+        // Hafif Gölge
+        label.layer.shadowColor = UIColor.black.cgColor
+        label.layer.shadowOffset = CGSize(width: 2, height: 2)
+        label.layer.shadowOpacity = 0.5
+        label.layer.shadowRadius = 3
+
         return label
     }()
+
     
     private let aiDescriptionLabel: UILabel = {
         let label = UILabel()
         label.text = "Our artificial intelligence knows everything, you should still try your luck :)"
         label.numberOfLines = 3
-        label.textColor = .white
-        label.font = .systemFont(ofSize: 16)
+        label.textColor = UIColor(white: 1.0, alpha: 0.85) // Beyaz ama çok hafif opak
+        label.textAlignment = .center
+        label.font = .systemFont(ofSize: 18, weight: .medium) // Başlık ile uyumlu font
         label.translatesAutoresizingMaskIntoConstraints = false
+
         return label
     }()
+
     
     private let aiImageView: UIImageView = {
         let imageView = UIImageView()
@@ -145,20 +172,40 @@ class HomeViewController: UIViewController {
     private func setupGradient() {
         let gradientLayer = CAGradientLayer()
         gradientLayer.colors = [
-            UIColor(red: 0.58, green: 0.40, blue: 0.93, alpha: 1.0).cgColor, // Lighter purple
-            UIColor(red: 0.53, green: 0.35, blue: 0.91, alpha: 1.0).cgColor  // Darker purple
+            UIColor(red: 0.58, green: 0.40, blue: 0.93, alpha: 1.0).cgColor, // Açık Mor
+            UIColor(red: 0.53, green: 0.35, blue: 0.91, alpha: 1.0).cgColor  // Koyu Mor
         ]
         gradientLayer.locations = [0.0, 1.0]
         
-        // Get the status bar height
-        let window = UIApplication.shared.windows.first
-        let statusBarHeight = window?.windowScene?.statusBarManager?.statusBarFrame.height ?? 0
-        
-        // Set gradient frame to start from top of screen (including status bar)
-        gradientLayer.frame = CGRect(x: 0, y: -100, width: view.bounds.width, height: 500)
-        
+        let gradientHeight: CGFloat = 550
+        let gradientYOffset: CGFloat = -100 // Mor kısmı yukarı taşımak için negatif değer veriyoruz
+        gradientLayer.frame = CGRect(x: 0, y: gradientYOffset, width: view.bounds.width, height: gradientHeight)
+
         topGradientView.layer.insertSublayer(gradientLayer, at: 0)
+
+        // Eğimin yukarı kaydırılması
+        let curveHeight: CGFloat = 120
+        let shapeLayer = CAShapeLayer()
+        let path = UIBezierPath()
+
+        // Başlangıç noktası (sol üst köşe)
+        path.move(to: CGPoint(x: 0, y: gradientYOffset))
+        // Sağ üst köşe
+        path.addLine(to: CGPoint(x: view.bounds.width, y: gradientYOffset))
+        // Sağ alt köşe (eğim başlangıcı)
+        path.addLine(to: CGPoint(x: view.bounds.width, y: gradientHeight - curveHeight + gradientYOffset))
+        // Eğimi yukarı kaydır
+        path.addQuadCurve(to: CGPoint(x: 0, y: gradientHeight - curveHeight + gradientYOffset), controlPoint: CGPoint(x: view.bounds.width / 2, y: gradientHeight + gradientYOffset))
+        // Sol alt köşe
+        path.addLine(to: CGPoint(x: 0, y: gradientYOffset))
+
+        shapeLayer.path = path.cgPath
+        shapeLayer.fillColor = UIColor.white.cgColor
+        topGradientView.layer.mask = shapeLayer
     }
+
+
+
     
     private func setupUI() {
         view.backgroundColor = .white

@@ -18,7 +18,7 @@ class CategoryCell: UICollectionViewCell {
     
     private let iconLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 48)
+        label.font = .systemFont(ofSize: 70)
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -27,8 +27,16 @@ class CategoryCell: UICollectionViewCell {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 18, weight: .medium)
-        label.textAlignment = .center
+        label.textAlignment = .left
         label.textColor = .black
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let questionsLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14)
+        label.textColor = .gray
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -73,6 +81,7 @@ class CategoryCell: UICollectionViewCell {
         contentView.addSubview(containerView)
         containerView.addSubview(iconLabel)
         containerView.addSubview(titleLabel)
+        containerView.addSubview(questionsLabel)
         containerView.addSubview(subtitleLabel)
         containerView.addSubview(iconImageView)
         containerView.addSubview(favoriteButton)
@@ -93,37 +102,150 @@ class CategoryCell: UICollectionViewCell {
     
     private func applyClassicStyle() {
         backgroundColor = .clear
-        containerView.backgroundColor = .backgroundPurple
+        containerView.backgroundColor = .white
         containerView.layer.cornerRadius = 16
         
         iconLabel.isHidden = false
         titleLabel.font = .systemFont(ofSize: 18, weight: .medium)
         titleLabel.textColor = .black
-        titleLabel.textAlignment = .center
+        titleLabel.textAlignment = .left
         subtitleLabel.isHidden = true
         iconImageView.isHidden = true
-        favoriteButton.isHidden = true  // Hide favorite button in classic style
+        favoriteButton.isHidden = true
+        questionsLabel.isHidden = false
         
         // Reset constraints
         iconLabel.removeFromSuperview()
         titleLabel.removeFromSuperview()
+        questionsLabel.removeFromSuperview()
         containerView.addSubview(iconLabel)
         containerView.addSubview(titleLabel)
+        containerView.addSubview(questionsLabel)
         
         NSLayoutConstraint.activate([
-            iconLabel.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            iconLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor, constant: -16),
+            iconLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            iconLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
+            iconLabel.heightAnchor.constraint(equalToConstant: 72),
+            iconLabel.widthAnchor.constraint(equalToConstant: 72),
             
             titleLabel.topAnchor.constraint(equalTo: iconLabel.bottomAnchor, constant: 12),
-            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12)
+            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            
+            questionsLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            questionsLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            questionsLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16)
         ])
         
-        // Hafif gölge
+        // Gölge efekti
         containerView.layer.shadowColor = UIColor.black.cgColor
         containerView.layer.shadowOffset = CGSize(width: 0, height: 2)
-        containerView.layer.shadowRadius = 4
+        containerView.layer.shadowRadius = 8
         containerView.layer.shadowOpacity = 0.1
+        
+        // Add appearance animation
+        addIconAnimation()
+    }
+    
+    private func addIconAnimation() {
+        let category = categoryTitle.lowercased()
+        
+        switch category {
+        case "vehicle":
+            addDriveAnimation()
+        case "science":
+            addBubbleAnimation()
+        case "sports":
+            addBounceAnimation()
+        case "history":
+            addFlipAnimation()
+        case "art":
+            addRotateAnimation()
+        default:
+            addPulseAnimation()
+        }
+    }
+    
+    private func addDriveAnimation() {
+        iconLabel.transform = CGAffineTransform(translationX: -50, y: 0)
+        UIView.animate(withDuration: 1.0, delay: 0.2, usingSpringWithDamping: 0.7, initialSpringVelocity: 0.5, options: [.repeat, .autoreverse], animations: {
+            self.iconLabel.transform = CGAffineTransform(translationX: 50, y: 0)
+        })
+    }
+    
+    private func addBubbleAnimation() {
+        UIView.animate(withDuration: 1.0, delay: 0, options: [.repeat, .autoreverse], animations: {
+            self.iconLabel.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
+            self.iconLabel.alpha = 0.7
+        })
+    }
+    
+    private func addBounceAnimation() {
+        let jumpHeight: CGFloat = -200  // Çok daha yüksek zıplama
+        
+        // Başlangıç pozisyonunu ayarla
+        iconLabel.transform = .identity
+        
+        let springTiming = UISpringTimingParameters(dampingRatio: 0.5, initialVelocity: CGVector(dx: 0, dy: 10))
+        
+        let animator = UIViewPropertyAnimator(duration: 2.0, timingParameters: springTiming)
+        
+        animator.addAnimations {
+            UIView.animateKeyframes(withDuration: 2.0, delay: 0, options: [.calculationModeCubic], animations: {
+                // İlk zıplama - Yükselme
+                UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.3) {
+                    self.iconLabel.transform = CGAffineTransform(translationX: 0, y: jumpHeight)
+                        .rotated(by: .pi * 0.5)
+                        .scaledBy(x: 0.7, y: 0.7)
+                }
+                
+                // Düşme ve sıkışma
+                UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.2) {
+                    self.iconLabel.transform = CGAffineTransform(translationX: 0, y: 0)
+                        .scaledBy(x: 1.3, y: 0.7)
+                }
+                
+                // İkinci zıplama - daha alçak
+                UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.2) {
+                    self.iconLabel.transform = CGAffineTransform(translationX: 0, y: jumpHeight/2)
+                        .rotated(by: .pi)
+                        .scaledBy(x: 0.8, y: 0.8)
+                }
+                
+                // Son düşüş ve normale dönüş
+                UIView.addKeyframe(withRelativeStartTime: 0.7, relativeDuration: 0.3) {
+                    self.iconLabel.transform = .identity
+                }
+            })
+        }
+        
+        animator.addCompletion { _ in
+            // Animasyonu tekrarla
+            self.addBounceAnimation()
+        }
+        
+        animator.startAnimation()
+    }
+    
+    private func addFlipAnimation() {
+        UIView.animate(withDuration: 1.5, delay: 0, options: [.repeat], animations: {
+            self.iconLabel.transform = CGAffineTransform(rotationAngle: .pi * 2)
+        })
+    }
+    
+    private func addRotateAnimation() {
+        let rotation = CABasicAnimation(keyPath: "transform.rotation")
+        rotation.fromValue = 0
+        rotation.toValue = Double.pi * 2
+        rotation.duration = 2
+        rotation.repeatCount = .infinity
+        iconLabel.layer.add(rotation, forKey: "rotationAnimation")
+    }
+    
+    private func addPulseAnimation() {
+        UIView.animate(withDuration: 1.0, delay: 0, options: [.repeat, .autoreverse], animations: {
+            self.iconLabel.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+        })
     }
     
     private func applyModernStyle() {
@@ -174,7 +296,7 @@ class CategoryCell: UICollectionViewCell {
         containerView.layer.shadowOpacity = 0.1
     }
     
-    func configure(title: String, icon: String? = nil, systemImage: String? = nil, style: Style = .classic, isFavorite: Bool = false) {
+    func configure(title: String, icon: String? = nil, systemImage: String? = nil, style: Style = .classic, isFavorite: Bool = false, questionCount: Int? = nil) {
         self.style = style
         
         if style == .classic {
@@ -188,6 +310,9 @@ class CategoryCell: UICollectionViewCell {
                 iconLabel.isHidden = true
                 iconImageView.isHidden = false
                 iconImageView.image = UIImage(systemName: systemImage)?.withRenderingMode(.alwaysTemplate)
+            }
+            if let count = questionCount {
+                questionsLabel.text = "\(count) questions"
             }
         } else {
             applyModernStyle()
@@ -203,6 +328,16 @@ class CategoryCell: UICollectionViewCell {
     
     @objc private func favoriteButtonTapped() {
         onFavoriteButtonTapped?()
+    }
+    
+    func animateIconExit() {
+        guard style == .classic else { return }
+        
+        UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseInOut) {
+            self.iconLabel.transform = CGAffineTransform(translationX: -self.containerView.bounds.width, y: 0)
+        } completion: { _ in
+            self.iconLabel.transform = .identity
+        }
     }
     
     override func layoutSubviews() {

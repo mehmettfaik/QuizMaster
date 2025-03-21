@@ -178,7 +178,9 @@ class StatsViewController: UIViewController, ChartViewDelegate {
             pieChartView.topAnchor.constraint(equalTo: statsView.topAnchor, constant: 20),
             pieChartView.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
             pieChartView.trailingAnchor.constraint(equalTo: statsView.trailingAnchor, constant: -20),
-            pieChartView.heightAnchor.constraint(equalTo: pieChartView.widthAnchor),
+            pieChartView.heightAnchor.constraint(equalTo: pieChartView.widthAnchor, multiplier: 1.2),
+            
+            
             
             categoryLabel.topAnchor.constraint(equalTo: pieChartView.bottomAnchor, constant: 20),
             categoryLabel.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
@@ -200,6 +202,7 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         pieChartView.rotationEnabled = true
         pieChartView.highlightPerTapEnabled = true
         pieChartView.animate(xAxisDuration: 1.0, yAxisDuration: 1.0)
+        pieChartView.drawEntryLabelsEnabled = false
         
         let legend = pieChartView.legend
         legend.horizontalAlignment = .center
@@ -209,6 +212,7 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         legend.xEntrySpace = 7
         legend.yEntrySpace = 0
         legend.yOffset = 0
+        legend.font = UIFont.systemFont(ofSize: 16)
     }
     
     private func setupLineChart() {

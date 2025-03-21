@@ -39,6 +39,8 @@ class LeaderboardCell: UITableViewCell {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .semibold)
         label.textColor = .black
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.7
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -130,6 +132,15 @@ class LeaderboardCell: UITableViewCell {
         }
         
         nameLabel.text = user.name
+        // İsim uzunluğuna göre font boyutunu ayarla
+        let maxWidth = containerView.frame.width - 160 // Avatar ve diğer elementler için boşluk bırak
+        let currentFont = UIFont.systemFont(ofSize: 16, weight: .semibold)
+        let size = (user.name as NSString).size(withAttributes: [.font: currentFont])
+        
+        if size.width > maxWidth {
+            nameLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+        }
+        
         pointsLabel.text = "\(user.totalPoints) points"
         
         if let avatarType = Avatar(rawValue: user.avatar) {

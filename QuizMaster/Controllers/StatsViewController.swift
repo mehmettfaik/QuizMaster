@@ -276,11 +276,11 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         
         // İlk 3'ü farklı boyutlarda göstermek için
         NSLayoutConstraint.activate([
-            firstPlaceCard.heightAnchor.constraint(equalToConstant: 220),
+            firstPlaceCard.heightAnchor.constraint(equalToConstant: 230),
             firstPlaceCard.widthAnchor.constraint(equalToConstant: 140),
-            secondPlaceCard.heightAnchor.constraint(equalToConstant: 180),
+            secondPlaceCard.heightAnchor.constraint(equalToConstant: 190),
             secondPlaceCard.widthAnchor.constraint(equalToConstant: 120),
-            thirdPlaceCard.heightAnchor.constraint(equalToConstant: 180),
+            thirdPlaceCard.heightAnchor.constraint(equalToConstant: 190),
             thirdPlaceCard.widthAnchor.constraint(equalToConstant: 120)
         ])
         
@@ -669,6 +669,9 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         nameLabel.font = rank == 1 ? .systemFont(ofSize: 18, weight: .semibold) : .systemFont(ofSize: 16, weight: .semibold)
         nameLabel.textColor = .black
         nameLabel.textAlignment = .center
+        nameLabel.adjustsFontSizeToFitWidth = true
+        nameLabel.minimumScaleFactor = 0.5
+        nameLabel.numberOfLines = 2
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
         
         let pointsLabel = UILabel()
@@ -737,6 +740,14 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
             
             if let nameLabel = cardView.viewWithTag(rank * 1000 + 3) as? UILabel {
                 nameLabel.text = user.name
+                
+                let maxWidth = rank == 1 ? 120.0 : 100.0
+                let currentFont = rank == 1 ? UIFont.systemFont(ofSize: 18, weight: .semibold) : UIFont.systemFont(ofSize: 16, weight: .semibold)
+                let size = (user.name as NSString).size(withAttributes: [.font: currentFont])
+                
+                if size.width > maxWidth {
+                    nameLabel.font = rank == 1 ? .systemFont(ofSize: 16, weight: .semibold) : .systemFont(ofSize: 14, weight: .semibold)
+                }
             }
             
             if let pointsLabel = cardView.viewWithTag(rank * 1000 + 4) as? UILabel {

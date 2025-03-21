@@ -7,7 +7,7 @@ class LeaderboardCell: UITableViewCell {
     private let containerView: UIView = {
         let view = UIView()
         view.backgroundColor = .white
-        view.layer.cornerRadius = 12
+        view.layer.cornerRadius = 16
         view.layer.shadowColor = UIColor.black.cgColor
         view.layer.shadowOffset = CGSize(width: 0, height: 2)
         view.layer.shadowRadius = 4
@@ -18,32 +18,35 @@ class LeaderboardCell: UITableViewCell {
     
     private let rankLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 18, weight: .bold)
-        label.textAlignment = .center
+        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.textColor = .primaryPurple
+        label.textAlignment = .left
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
     private let avatarImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
+        imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
-        imageView.layer.cornerRadius = 20
+        imageView.layer.cornerRadius = 25
+        imageView.backgroundColor = .systemGray6
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
     
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .medium)
+        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        label.textColor = .black
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
     private let pointsLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .semibold)
-        label.textColor = .primaryPurple
+        label.font = .systemFont(ofSize: 16)
+        label.textColor = .systemIndigo
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -51,7 +54,7 @@ class LeaderboardCell: UITableViewCell {
     private let trendImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
-        imageView.tintColor = .gray
+        imageView.tintColor = .systemGreen
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
@@ -84,51 +87,57 @@ class LeaderboardCell: UITableViewCell {
             
             rankLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
             rankLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            rankLabel.widthAnchor.constraint(equalToConstant: 30),
+            rankLabel.widthAnchor.constraint(equalToConstant: 40),
             
             avatarImageView.leadingAnchor.constraint(equalTo: rankLabel.trailingAnchor, constant: 12),
             avatarImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            avatarImageView.widthAnchor.constraint(equalToConstant: 40),
-            avatarImageView.heightAnchor.constraint(equalToConstant: 40),
+            avatarImageView.widthAnchor.constraint(equalToConstant: 50),
+            avatarImageView.heightAnchor.constraint(equalToConstant: 50),
             
             nameLabel.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 12),
             nameLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             
-            pointsLabel.trailingAnchor.constraint(equalTo: trendImageView.leadingAnchor, constant: -8),
-            pointsLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            
             trendImageView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
             trendImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            trendImageView.widthAnchor.constraint(equalToConstant: 20),
-            trendImageView.heightAnchor.constraint(equalToConstant: 20),
+            trendImageView.widthAnchor.constraint(equalToConstant: 24),
+            trendImageView.heightAnchor.constraint(equalToConstant: 24),
             
-            containerView.heightAnchor.constraint(equalToConstant: 72)
+            pointsLabel.trailingAnchor.constraint(equalTo: trendImageView.leadingAnchor, constant: -8),
+            pointsLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
         ])
     }
     
-    func configure(with user: User, rank: Int, trend: Int = 0) {
-        rankLabel.text = "#\(rank)"
+    func configure(with user: User, rank: Int) {
+        // Configure rank with special styling for top 3
+        if rank <= 3 {
+            rankLabel.text = "#\(rank)"
+            rankLabel.font = .systemFont(ofSize: 24, weight: .bold)
+            
+            switch rank {
+            case 1:
+                rankLabel.textColor = UIColor(red: 1, green: 0.84, blue: 0, alpha: 1) // Gold
+            case 2:
+                rankLabel.textColor = UIColor(red: 0.75, green: 0.75, blue: 0.75, alpha: 1) // Silver
+            case 3:
+                rankLabel.textColor = UIColor(red: 0.8, green: 0.5, blue: 0.2, alpha: 1) // Bronze
+            default:
+                break
+            }
+        } else {
+            rankLabel.text = "#\(rank)"
+            rankLabel.font = .systemFont(ofSize: 20, weight: .bold)
+            rankLabel.textColor = .darkGray
+        }
+        
         nameLabel.text = user.name
-        pointsLabel.text = "\(user.totalPoints) 🏅"
+        pointsLabel.text = "\(user.totalPoints) points"
         
         if let avatarType = Avatar(rawValue: user.avatar) {
             avatarImageView.image = avatarType.image
             avatarImageView.backgroundColor = avatarType.backgroundColor
         }
         
-        // Configure trend indicator
-        if trend > 0 {
-            trendImageView.image = UIImage(systemName: "arrow.up.circle.fill")
-            trendImageView.tintColor = .systemGreen
-        } else if trend < 0 {
-            trendImageView.image = UIImage(systemName: "arrow.down.circle.fill")
-            trendImageView.tintColor = .systemRed
-        } else {
-            trendImageView.image = UIImage(systemName: "minus.circle.fill")
-            trendImageView.tintColor = .systemGray
-        }
-        
-        // Highlight current user
+        // Highlight current user's row
         if user.id == Auth.auth().currentUser?.uid {
             containerView.backgroundColor = .primaryPurple.withAlphaComponent(0.1)
             containerView.layer.borderWidth = 1
@@ -138,28 +147,14 @@ class LeaderboardCell: UITableViewCell {
             containerView.layer.borderWidth = 0
         }
         
-        // Special styling for top 3
+        // Configure trend indicator (up/down arrow)
         if rank <= 3 {
-            rankLabel.textColor = .white
-            rankLabel.font = .systemFont(ofSize: 20, weight: .bold)
-            
-            switch rank {
-            case 1:
-                rankLabel.backgroundColor = UIColor(red: 1, green: 0.84, blue: 0, alpha: 1) // Gold
-            case 2:
-                rankLabel.backgroundColor = UIColor(red: 0.75, green: 0.75, blue: 0.75, alpha: 1) // Silver
-            case 3:
-                rankLabel.backgroundColor = UIColor(red: 0.8, green: 0.5, blue: 0.2, alpha: 1) // Bronze
-            default:
-                break
-            }
-            
-            rankLabel.layer.cornerRadius = 15
-            rankLabel.layer.masksToBounds = true
+            trendImageView.image = UIImage(systemName: "crown.fill")
+            trendImageView.tintColor = rankLabel.textColor
         } else {
-            rankLabel.backgroundColor = .clear
-            rankLabel.textColor = .black
-            rankLabel.font = .systemFont(ofSize: 18, weight: .bold)
+            // You can implement trend logic here if needed
+            trendImageView.image = UIImage(systemName: "arrow.up.circle.fill")
+            trendImageView.tintColor = .systemGreen
         }
     }
 } 

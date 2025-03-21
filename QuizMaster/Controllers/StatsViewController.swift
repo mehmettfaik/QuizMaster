@@ -12,6 +12,24 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         let control = UISegmentedControl(items: ["İstatistikler", "Liderlik Tablosu"])
         control.selectedSegmentIndex = 0
         control.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Appearance customization
+        let purpleColor = UIColor.primaryPurple
+        control.backgroundColor = .systemGray5
+        control.selectedSegmentTintColor = purpleColor
+        
+        // Text attributes for normal state
+        let normalTextAttributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: UIColor.darkGray
+        ]
+        control.setTitleTextAttributes(normalTextAttributes, for: .normal)
+        
+        // Text attributes for selected state
+        let selectedTextAttributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: UIColor.white
+        ]
+        control.setTitleTextAttributes(selectedTextAttributes, for: .selected)
+        
         return control
     }()
     
@@ -34,6 +52,24 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         let control = UISegmentedControl(items: ["Bu Hafta", "Bu Ay", "Tüm Zamanlar"])
         control.selectedSegmentIndex = 0
         control.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Appearance customization
+        let purpleColor = UIColor.primaryPurple
+        control.backgroundColor = .systemGray5
+        control.selectedSegmentTintColor = purpleColor
+        
+        // Text attributes for normal state
+        let normalTextAttributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: UIColor.darkGray
+        ]
+        control.setTitleTextAttributes(normalTextAttributes, for: .normal)
+        
+        // Text attributes for selected state
+        let selectedTextAttributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: UIColor.white
+        ]
+        control.setTitleTextAttributes(selectedTextAttributes, for: .selected)
+        
         return control
     }()
     
@@ -159,6 +195,22 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         return label
     }()
     
+    private let topThreeContainerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private let topThreeStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.distribution = .equalSpacing
+        stackView.alignment = .center
+        stackView.spacing = 12
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        return stackView
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -212,6 +264,30 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         // Add leaderboard view
         view.addSubview(leaderboardView)
         leaderboardView.addSubview(timeFilterControl)
+        
+        // Add top three container and stack view
+        leaderboardView.addSubview(topThreeContainerView)
+        topThreeContainerView.addSubview(topThreeStackView)
+        
+        // Create and add top 3 cards
+        let secondPlaceCard = createTopUserCard(rank: 2)
+        let firstPlaceCard = createTopUserCard(rank: 1)
+        let thirdPlaceCard = createTopUserCard(rank: 3)
+        
+        // İlk 3'ü farklı boyutlarda göstermek için
+        NSLayoutConstraint.activate([
+            firstPlaceCard.heightAnchor.constraint(equalToConstant: 220),
+            firstPlaceCard.widthAnchor.constraint(equalToConstant: 140),
+            secondPlaceCard.heightAnchor.constraint(equalToConstant: 180),
+            secondPlaceCard.widthAnchor.constraint(equalToConstant: 120),
+            thirdPlaceCard.heightAnchor.constraint(equalToConstant: 180),
+            thirdPlaceCard.widthAnchor.constraint(equalToConstant: 120)
+        ])
+        
+        topThreeStackView.addArrangedSubview(secondPlaceCard)
+        topThreeStackView.addArrangedSubview(firstPlaceCard)
+        topThreeStackView.addArrangedSubview(thirdPlaceCard)
+        
         leaderboardView.addSubview(leaderboardTableView)
         
         // Setup leaderboard table view
@@ -289,8 +365,18 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
             timeFilterControl.leadingAnchor.constraint(equalTo: leaderboardView.leadingAnchor, constant: 16),
             timeFilterControl.trailingAnchor.constraint(equalTo: leaderboardView.trailingAnchor, constant: -16),
             
-            // Leaderboard table view constraints
-            leaderboardTableView.topAnchor.constraint(equalTo: timeFilterControl.bottomAnchor, constant: 16),
+            // Top three container constraints
+            topThreeContainerView.topAnchor.constraint(equalTo: timeFilterControl.bottomAnchor, constant: 16),
+            topThreeContainerView.leadingAnchor.constraint(equalTo: leaderboardView.leadingAnchor),
+            topThreeContainerView.trailingAnchor.constraint(equalTo: leaderboardView.trailingAnchor),
+            topThreeContainerView.heightAnchor.constraint(equalToConstant: 220),
+            
+            // Top three stack view constraints
+            topThreeStackView.centerXAnchor.constraint(equalTo: topThreeContainerView.centerXAnchor),
+            topThreeStackView.centerYAnchor.constraint(equalTo: topThreeContainerView.centerYAnchor),
+            
+            // Update leaderboard table view constraints
+            leaderboardTableView.topAnchor.constraint(equalTo: topThreeContainerView.bottomAnchor, constant: 16),
             leaderboardTableView.leadingAnchor.constraint(equalTo: leaderboardView.leadingAnchor),
             leaderboardTableView.trailingAnchor.constraint(equalTo: leaderboardView.trailingAnchor),
             leaderboardTableView.bottomAnchor.constraint(equalTo: leaderboardView.bottomAnchor),
@@ -342,6 +428,7 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
                 switch result {
                 case .success(let users):
                     self.leaderboardUsers = users
+                    self.updateTopThreeCards()
                     self.leaderboardTableView.reloadData()
                 case .failure(let error):
                     // Show error alert
@@ -359,13 +446,13 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
     
     // MARK: - UITableViewDelegate & UITableViewDataSource
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return leaderboardUsers.count
+        return max(0, leaderboardUsers.count - 3) // İlk 3'ü çıkarıyoruz
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: LeaderboardCell.identifier, for: indexPath) as! LeaderboardCell
-        let user = leaderboardUsers[indexPath.row]
-        cell.configure(with: user, rank: indexPath.row + 1)
+        let user = leaderboardUsers[indexPath.row + 3] // İlk 3'ü atladığımız için +3 ekliyoruz
+        cell.configure(with: user, rank: indexPath.row + 4) // Sıralama numarasını 4'ten başlatıyoruz
         return cell
     }
     
@@ -551,5 +638,110 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
                 self?.quizzesValueLabel.text = "\(quizzes)"
             }
             .store(in: &cancellables)
+    }
+    
+    private func createTopUserCard(rank: Int) -> UIView {
+        let cardView = UIView()
+        cardView.backgroundColor = .white
+        cardView.layer.cornerRadius = 16
+        cardView.layer.shadowColor = UIColor.black.cgColor
+        cardView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        cardView.layer.shadowRadius = 4
+        cardView.layer.shadowOpacity = 0.1
+        cardView.translatesAutoresizingMaskIntoConstraints = false
+        
+        let rankLabel = UILabel()
+        rankLabel.text = "#\(rank)"
+        rankLabel.font = rank == 1 ? .systemFont(ofSize: 24, weight: .bold) : .systemFont(ofSize: 20, weight: .bold)
+        rankLabel.textAlignment = .center
+        rankLabel.translatesAutoresizingMaskIntoConstraints = false
+        
+        let avatarImageView = UIImageView()
+        avatarImageView.contentMode = .scaleAspectFill
+        avatarImageView.clipsToBounds = true
+        // Birinci için daha büyük avatar
+        let avatarSize = rank == 1 ? 90.0 : 70.0
+        avatarImageView.layer.cornerRadius = avatarSize / 2
+        avatarImageView.backgroundColor = .systemGray6
+        avatarImageView.translatesAutoresizingMaskIntoConstraints = false
+        
+        let nameLabel = UILabel()
+        nameLabel.font = rank == 1 ? .systemFont(ofSize: 18, weight: .semibold) : .systemFont(ofSize: 16, weight: .semibold)
+        nameLabel.textColor = .black
+        nameLabel.textAlignment = .center
+        nameLabel.translatesAutoresizingMaskIntoConstraints = false
+        
+        let pointsLabel = UILabel()
+        pointsLabel.font = rank == 1 ? .systemFont(ofSize: 16) : .systemFont(ofSize: 14)
+        pointsLabel.textColor = .systemIndigo
+        pointsLabel.textAlignment = .center
+        pointsLabel.translatesAutoresizingMaskIntoConstraints = false
+        
+        cardView.addSubview(rankLabel)
+        cardView.addSubview(avatarImageView)
+        cardView.addSubview(nameLabel)
+        cardView.addSubview(pointsLabel)
+        
+        NSLayoutConstraint.activate([
+            rankLabel.topAnchor.constraint(equalTo: cardView.topAnchor, constant: rank == 1 ? 12 : 8),
+            rankLabel.centerXAnchor.constraint(equalTo: cardView.centerXAnchor),
+            
+            avatarImageView.topAnchor.constraint(equalTo: rankLabel.bottomAnchor, constant: rank == 1 ? 12 : 8),
+            avatarImageView.centerXAnchor.constraint(equalTo: cardView.centerXAnchor),
+            avatarImageView.widthAnchor.constraint(equalToConstant: avatarSize),
+            avatarImageView.heightAnchor.constraint(equalToConstant: avatarSize),
+            
+            nameLabel.topAnchor.constraint(equalTo: avatarImageView.bottomAnchor, constant: rank == 1 ? 12 : 8),
+            nameLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 4),
+            nameLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -4),
+            
+            pointsLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: rank == 1 ? 8 : 4),
+            pointsLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 4),
+            pointsLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -4),
+            pointsLabel.bottomAnchor.constraint(lessThanOrEqualTo: cardView.bottomAnchor, constant: rank == 1 ? -12 : -8)
+        ])
+        
+        // Tag'leri kullanarak daha sonra güncelleyebilmek için view'ları saklayalım
+        rankLabel.tag = rank * 1000 + 1
+        avatarImageView.tag = rank * 1000 + 2
+        nameLabel.tag = rank * 1000 + 3
+        pointsLabel.tag = rank * 1000 + 4
+        
+        return cardView
+    }
+    
+    private func updateTopThreeCards() {
+        guard leaderboardUsers.count >= 3 else { return }
+        
+        let rankColors = [
+            1: UIColor(red: 1, green: 0.84, blue: 0, alpha: 1), // Gold
+            2: UIColor(red: 0.75, green: 0.75, blue: 0.75, alpha: 1), // Silver
+            3: UIColor(red: 0.8, green: 0.5, blue: 0.2, alpha: 1) // Bronze
+        ]
+        
+        for rank in 1...3 {
+            let user = leaderboardUsers[rank - 1]
+            let cardView = topThreeStackView.arrangedSubviews[rank == 1 ? 1 : rank == 2 ? 0 : 2]
+            
+            if let rankLabel = cardView.viewWithTag(rank * 1000 + 1) as? UILabel {
+                rankLabel.text = "#\(rank)"
+                rankLabel.textColor = rankColors[rank]
+            }
+            
+            if let avatarImageView = cardView.viewWithTag(rank * 1000 + 2) as? UIImageView {
+                if let avatarType = Avatar(rawValue: user.avatar) {
+                    avatarImageView.image = avatarType.image
+                    avatarImageView.backgroundColor = avatarType.backgroundColor
+                }
+            }
+            
+            if let nameLabel = cardView.viewWithTag(rank * 1000 + 3) as? UILabel {
+                nameLabel.text = user.name
+            }
+            
+            if let pointsLabel = cardView.viewWithTag(rank * 1000 + 4) as? UILabel {
+                pointsLabel.text = "\(user.totalPoints) points"
+            }
+        }
     }
 } 

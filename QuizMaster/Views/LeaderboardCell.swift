@@ -49,6 +49,7 @@ class LeaderboardCell: UITableViewCell {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16)
         label.textColor = .systemIndigo
+        label.textAlignment = .right
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -96,16 +97,18 @@ class LeaderboardCell: UITableViewCell {
             avatarImageView.widthAnchor.constraint(equalToConstant: 50),
             avatarImageView.heightAnchor.constraint(equalToConstant: 50),
             
-            nameLabel.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 12),
-            nameLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            
             trendImageView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
             trendImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             trendImageView.widthAnchor.constraint(equalToConstant: 24),
             trendImageView.heightAnchor.constraint(equalToConstant: 24),
             
             pointsLabel.trailingAnchor.constraint(equalTo: trendImageView.leadingAnchor, constant: -8),
-            pointsLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
+            pointsLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            pointsLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
+            
+            nameLabel.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 12),
+            nameLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            nameLabel.trailingAnchor.constraint(equalTo: pointsLabel.leadingAnchor, constant: -8)
         ])
     }
     
@@ -132,16 +135,18 @@ class LeaderboardCell: UITableViewCell {
         }
         
         nameLabel.text = user.name
+        pointsLabel.text = "\(user.totalPoints) points"
+        
         // İsim uzunluğuna göre font boyutunu ayarla
-        let maxWidth = containerView.frame.width - 160 // Avatar ve diğer elementler için boşluk bırak
+        let maxWidth = containerView.frame.width - 250 // Avatar, rank, points ve trend için boşluk bırak
         let currentFont = UIFont.systemFont(ofSize: 16, weight: .semibold)
         let size = (user.name as NSString).size(withAttributes: [.font: currentFont])
         
         if size.width > maxWidth {
             nameLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+        } else {
+            nameLabel.font = currentFont
         }
-        
-        pointsLabel.text = "\(user.totalPoints) points"
         
         if let avatarType = Avatar(rawValue: user.avatar) {
             avatarImageView.image = avatarType.image
@@ -163,7 +168,6 @@ class LeaderboardCell: UITableViewCell {
             trendImageView.image = UIImage(systemName: "crown.fill")
             trendImageView.tintColor = rankLabel.textColor
         } else {
-            // You can implement trend logic here if needed
             trendImageView.image = UIImage(systemName: "arrow.up.circle.fill")
             trendImageView.tintColor = .systemGreen
         }

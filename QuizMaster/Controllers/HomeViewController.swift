@@ -243,7 +243,7 @@ class HomeViewController: UIViewController {
             topGradientView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             topGradientView.heightAnchor.constraint(equalToConstant: 400),
             
-            greetingLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 60),
+            greetingLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 35),
             greetingLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             greetingLabel.trailingAnchor.constraint(equalTo: friendsButton.leadingAnchor, constant: -20),
             

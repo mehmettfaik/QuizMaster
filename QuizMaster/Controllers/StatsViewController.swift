@@ -7,6 +7,20 @@ class StatsViewController: UIViewController, ChartViewDelegate {
     private let viewModel = UserViewModel()
     private var cancellables = Set<AnyCancellable>()
     
+    private let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.showsVerticalScrollIndicator = true
+        scrollView.showsHorizontalScrollIndicator = false
+        return scrollView
+    }()
+    
+    private let contentView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     private let headerView: UIView = {
         let view = UIView()
         view.backgroundColor = .primaryPurple
@@ -129,6 +143,11 @@ class StatsViewController: UIViewController, ChartViewDelegate {
     private func setupUI() {
         view.backgroundColor = .white
         
+        // Add scroll view and content view
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        
+        // Add header view directly to main view (outside scroll area)
         view.addSubview(headerView)
         headerView.addSubview(pointsLabel)
         headerView.addSubview(pointsValueLabel)
@@ -136,14 +155,33 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         headerView.addSubview(quizzesValueLabel)
         headerView.addSubview(rankLabel)
         headerView.addSubview(rankValueLabel)
-        headerView.addSubview(loadingIndicator)
         
-        view.addSubview(statsView)
+        // Add loading indicator to the main view so it's always visible
+        view.addSubview(loadingIndicator)
+        
+        // Add stats view to the content view (scrollable area)
+        contentView.addSubview(statsView)
         statsView.addSubview(pieChartView)
         statsView.addSubview(categoryLabel)
         statsView.addSubview(lineChartView)
         
+        // Setup scroll view and content view constraints
         NSLayoutConstraint.activate([
+            // Scroll view constraints
+            scrollView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor,constant: 100),
+            
+            // Content view constraints
+            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            // Content view height will be determined by its subviews
+            
+            // Header view constraints
             headerView.topAnchor.constraint(equalTo: view.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -170,17 +208,15 @@ class StatsViewController: UIViewController, ChartViewDelegate {
             rankValueLabel.trailingAnchor.constraint(equalTo: rankLabel.trailingAnchor),
             rankValueLabel.topAnchor.constraint(equalTo: rankLabel.bottomAnchor, constant: 4),
             
-            statsView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 20),
-            statsView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            statsView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            statsView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
+            statsView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            statsView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            statsView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            statsView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
             
-            pieChartView.topAnchor.constraint(equalTo: statsView.topAnchor, constant: 20),
+            pieChartView.topAnchor.constraint(equalTo: statsView.topAnchor, constant: 10),
             pieChartView.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
             pieChartView.trailingAnchor.constraint(equalTo: statsView.trailingAnchor, constant: -20),
-            pieChartView.heightAnchor.constraint(equalTo: pieChartView.widthAnchor, multiplier: 1.2),
-            
-            
+            pieChartView.heightAnchor.constraint(equalTo: pieChartView.widthAnchor,multiplier: 1.2),
             
             categoryLabel.topAnchor.constraint(equalTo: pieChartView.bottomAnchor, constant: 20),
             categoryLabel.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
@@ -189,8 +225,15 @@ class StatsViewController: UIViewController, ChartViewDelegate {
             lineChartView.topAnchor.constraint(equalTo: categoryLabel.bottomAnchor, constant: 10),
             lineChartView.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
             lineChartView.trailingAnchor.constraint(equalTo: statsView.trailingAnchor, constant: -20),
-            lineChartView.heightAnchor.constraint(equalToConstant: 200)
+            lineChartView.heightAnchor.constraint(equalToConstant: 200),
+            lineChartView.bottomAnchor.constraint(lessThanOrEqualTo: statsView.bottomAnchor, constant: -20)
         ])
+        
+        // Set a height constraint for the content view based on the statsView
+        // This ensures the scroll view knows the content size
+        let contentHeightConstraint = contentView.heightAnchor.constraint(greaterThanOrEqualTo: view.heightAnchor)
+        contentHeightConstraint.priority = .defaultLow
+        contentHeightConstraint.isActive = true
     }
     
     private func setupPieChart() {
@@ -202,7 +245,6 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         pieChartView.rotationEnabled = true
         pieChartView.highlightPerTapEnabled = true
         pieChartView.animate(xAxisDuration: 1.0, yAxisDuration: 1.0)
-        pieChartView.drawEntryLabelsEnabled = false
         
         let legend = pieChartView.legend
         legend.horizontalAlignment = .center
@@ -212,7 +254,7 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         legend.xEntrySpace = 7
         legend.yEntrySpace = 0
         legend.yOffset = 0
-        legend.font = UIFont.systemFont(ofSize: 16)
+        legend.font = UIFont.systemFont(ofSize: 15)
     }
     
     private func setupLineChart() {
@@ -265,6 +307,7 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         dataSet.valueTextColor = .black
         dataSet.valueFont = .systemFont(ofSize: 12)
         dataSet.valueFormatter = DefaultValueFormatter(decimals: 1)
+        pieChartView.drawEntryLabelsEnabled = false
         
         let data = PieChartData(dataSet: dataSet)
         pieChartView.data = data
@@ -311,12 +354,16 @@ class StatsViewController: UIViewController, ChartViewDelegate {
            let category = pieEntry.label,
            let stats = viewModel.categoryStats[category] {
             updateLineChart(for: category, stats: stats)
+            // Force layout update to adjust scroll content size
+            view.layoutIfNeeded()
         }
     }
     
     func chartValueNothingSelected(_ chartView: ChartViewBase) {
         categoryLabel.isHidden = true
         lineChartView.isHidden = true
+        // Force layout update to adjust scroll content size
+        view.layoutIfNeeded()
     }
     
     private func setupBindings() {

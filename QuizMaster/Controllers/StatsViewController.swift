@@ -381,14 +381,14 @@ class StatsViewController: UIViewController, ChartViewDelegate {
         viewModel.$totalPoints
             .receive(on: DispatchQueue.main)
             .sink { [weak self] points in
-                self?.pointsValueLabel.text = "\(points)"
+                self?.pointsValueLabel.text = "\(points)🏅"
             }
             .store(in: &cancellables)
         
         viewModel.$worldRank
             .receive(on: DispatchQueue.main)
             .sink { [weak self] rank in
-                self?.rankValueLabel.text = "#\(rank)"
+                self?.rankValueLabel.text = "🏆 \(rank)"
             }
             .store(in: &cancellables)
         

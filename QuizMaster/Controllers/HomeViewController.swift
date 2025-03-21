@@ -312,13 +312,13 @@ class HomeViewController: UIViewController {
         
         switch hour {
         case 6..<12:
-            greeting = "GOOD MORNING"
+            greeting = "GOOD MORNING ☀️"
         case 12..<17:
-            greeting = "GOOD AFTERNOON"
+            greeting = "GOOD AFTERNOON ⛅️ "
         case 17..<22:
-            greeting = "GOOD EVENING"
+            greeting = "GOOD EVENING 🌅"
         default:
-            greeting = "GOOD NIGHT"
+            greeting = "GOOD NIGHT 🌙"
         }
         
         greetingLabel.text = greeting

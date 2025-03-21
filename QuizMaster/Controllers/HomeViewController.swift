@@ -18,49 +18,51 @@ class HomeViewController: UIViewController {
         return view
     }()
     
-    private let greetingLabel: UILabel = {
+    private let topGradientView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private let greetingLabel: UILabel = { //Günaydın Kısmı
         let label = UILabel()
-        label.font = .systemFont(ofSize: 24, weight: .bold)
-        label.textColor = .primaryPurple
+        label.font = .systemFont(ofSize: 18, weight: .bold)
+        label.textColor = UIColor(red: 255/255, green: 215/255, blue: 0/255, alpha: 1) // Altın rengi (FFD700)
         label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
+
     
+    private let nameLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 30, weight: .bold)
+        label.textColor = .white
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
     private let friendsButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "person.2.fill"), for: .normal)
-        button.tintColor = .primaryPurple
+        button.tintColor = .white
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     
     private let aiCard: UIView = {
         let view = UIView()
-        view.backgroundColor = .secondaryPurple
+        view.backgroundColor = UIColor(white: 1, alpha: 0.15)
         view.layer.cornerRadius = 20
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOffset = CGSize(width: 0, height: 4)
-        view.layer.shadowRadius = 12
-        view.layer.shadowOpacity = 0.1
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
     
-    private let aiIconImageView: UIImageView = {
-        let imageView = UIImageView()
-        let config = UIImage.SymbolConfiguration(pointSize: 28, weight: .medium)
-        imageView.image = UIImage(systemName: "sparkles.square.filled.on.square", withConfiguration: config)
-        imageView.tintColor = .white
-        imageView.contentMode = .scaleAspectFit
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
-    }()
-    
-    private let aiNameLabel: UILabel = {
+    private let aiTitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "QuizGPT"
-        label.font = .systemFont(ofSize: 24, weight: .bold)
+        label.text = "Yapay zeka ismi"
+        label.font = .systemFont(ofSize: 18, weight: .medium)
         label.textColor = .white
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -68,12 +70,20 @@ class HomeViewController: UIViewController {
     
     private let aiDescriptionLabel: UILabel = {
         let label = UILabel()
-        label.text = "Your AI quiz companion. Get instant help \nand explore new topics! ✨"
-        label.numberOfLines = 4
-        label.textColor = UIColor.white.withAlphaComponent(0.9)
+        label.text = "Our artificial intelligence knows everything, you should still try your luck :)"
+        label.numberOfLines = 3
+        label.textColor = .white
         label.font = .systemFont(ofSize: 16)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
+    }()
+    
+    private let aiImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(named: "ai_robot")
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
     }()
     
     private let askAIButton: UIButton = {
@@ -83,18 +93,6 @@ class HomeViewController: UIViewController {
         button.setTitleColor(.primaryPurple, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
         button.layer.cornerRadius = 20
-        button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOffset = CGSize(width: 0, height: 2)
-        button.layer.shadowRadius = 4
-        button.layer.shadowOpacity = 0.1
-        
-        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
-        let image = UIImage(systemName: "arrow.forward", withConfiguration: config)
-        button.setImage(image, for: .normal)
-        button.tintColor = .primaryPurple
-        button.semanticContentAttribute = .forceRightToLeft
-        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: -8)
-        
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -102,7 +100,7 @@ class HomeViewController: UIViewController {
     private let categoriesLabel: UILabel = {
         let label = UILabel()
         label.text = "Quiz Categories"
-        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.font = .systemFont(ofSize: 24, weight: .bold)
         label.textColor = .black
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -133,6 +131,7 @@ class HomeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupGradient()
         setupCollectionView()
         setupBindings()
         updateGreeting()
@@ -143,25 +142,45 @@ class HomeViewController: UIViewController {
         viewModel.loadUserProfile()
     }
     
+    private func setupGradient() {
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.colors = [
+            UIColor(red: 0.58, green: 0.40, blue: 0.93, alpha: 1.0).cgColor, // Lighter purple
+            UIColor(red: 0.53, green: 0.35, blue: 0.91, alpha: 1.0).cgColor  // Darker purple
+        ]
+        gradientLayer.locations = [0.0, 1.0]
+        
+        // Get the status bar height
+        let window = UIApplication.shared.windows.first
+        let statusBarHeight = window?.windowScene?.statusBarManager?.statusBarFrame.height ?? 0
+        
+        // Set gradient frame to start from top of screen (including status bar)
+        gradientLayer.frame = CGRect(x: 0, y: -100, width: view.bounds.width, height: 500)
+        
+        topGradientView.layer.insertSublayer(gradientLayer, at: 0)
+    }
+    
     private func setupUI() {
         view.backgroundColor = .white
         
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
         
+        contentView.addSubview(topGradientView)
         contentView.addSubview(greetingLabel)
+        contentView.addSubview(nameLabel)
         contentView.addSubview(friendsButton)
         contentView.addSubview(aiCard)
         contentView.addSubview(categoriesLabel)
         contentView.addSubview(categoriesCollectionView)
         
-        aiCard.addSubview(aiIconImageView)
-        aiCard.addSubview(aiNameLabel)
+        aiCard.addSubview(aiTitleLabel)
         aiCard.addSubview(aiDescriptionLabel)
+        aiCard.addSubview(aiImageView)
         aiCard.addSubview(askAIButton)
         
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -172,46 +191,53 @@ class HomeViewController: UIViewController {
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             
-            greetingLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            greetingLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            greetingLabel.trailingAnchor.constraint(equalTo: friendsButton.leadingAnchor, constant: -8),
+            topGradientView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            topGradientView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            topGradientView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            topGradientView.heightAnchor.constraint(equalToConstant: 400),
             
-            friendsButton.centerYAnchor.constraint(equalTo: greetingLabel.centerYAnchor),
+            greetingLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 60),
+            greetingLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            greetingLabel.trailingAnchor.constraint(equalTo: friendsButton.leadingAnchor, constant: -20),
+            
+            nameLabel.topAnchor.constraint(equalTo: greetingLabel.bottomAnchor, constant: 8),
+            nameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            
+            friendsButton.topAnchor.constraint(equalTo: greetingLabel.topAnchor),
             friendsButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             friendsButton.widthAnchor.constraint(equalToConstant: 44),
             friendsButton.heightAnchor.constraint(equalToConstant: 44),
             
-            aiCard.topAnchor.constraint(equalTo: greetingLabel.bottomAnchor, constant: 20),
+            aiCard.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 24),
             aiCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             aiCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            aiCard.heightAnchor.constraint(equalToConstant: 200),
+            aiCard.heightAnchor.constraint(equalToConstant: 160),
             
-            aiIconImageView.topAnchor.constraint(equalTo: aiCard.topAnchor, constant: 24),
-            aiIconImageView.leadingAnchor.constraint(equalTo: aiCard.leadingAnchor, constant: 24),
-            aiIconImageView.widthAnchor.constraint(equalToConstant: 36),
-            aiIconImageView.heightAnchor.constraint(equalToConstant: 36),
+            aiTitleLabel.topAnchor.constraint(equalTo: aiCard.topAnchor, constant: 20),
+            aiTitleLabel.leadingAnchor.constraint(equalTo: aiCard.leadingAnchor, constant: 20),
             
-            aiNameLabel.leadingAnchor.constraint(equalTo: aiIconImageView.trailingAnchor, constant: 12),
-            aiNameLabel.centerYAnchor.constraint(equalTo: aiIconImageView.centerYAnchor),
+            aiDescriptionLabel.topAnchor.constraint(equalTo: aiTitleLabel.bottomAnchor, constant: 12),
+            aiDescriptionLabel.leadingAnchor.constraint(equalTo: aiCard.leadingAnchor, constant: 20),
+            aiDescriptionLabel.trailingAnchor.constraint(equalTo: aiImageView.leadingAnchor, constant: -12),
             
-            aiDescriptionLabel.topAnchor.constraint(equalTo: aiIconImageView.bottomAnchor, constant: 16),
-            aiDescriptionLabel.leadingAnchor.constraint(equalTo: aiCard.leadingAnchor, constant: 24),
-            aiDescriptionLabel.trailingAnchor.constraint(equalTo: aiCard.trailingAnchor, constant: -24),
+            aiImageView.centerYAnchor.constraint(equalTo: aiCard.centerYAnchor),
+            aiImageView.trailingAnchor.constraint(equalTo: aiCard.trailingAnchor, constant: -20),
+            aiImageView.widthAnchor.constraint(equalToConstant: 80),
+            aiImageView.heightAnchor.constraint(equalToConstant: 80),
             
             askAIButton.topAnchor.constraint(equalTo: aiDescriptionLabel.bottomAnchor, constant: 16),
-            askAIButton.leadingAnchor.constraint(equalTo: aiCard.leadingAnchor, constant: 24),
+            askAIButton.leadingAnchor.constraint(equalTo: aiCard.leadingAnchor, constant: 20),
             askAIButton.heightAnchor.constraint(equalToConstant: 40),
-            askAIButton.widthAnchor.constraint(equalToConstant: 140),
-            askAIButton.bottomAnchor.constraint(equalTo: aiCard.bottomAnchor, constant: -24),
+            askAIButton.widthAnchor.constraint(equalToConstant: 120),
             
-            categoriesLabel.topAnchor.constraint(equalTo: aiCard.bottomAnchor, constant: 30),
+            categoriesLabel.topAnchor.constraint(equalTo: topGradientView.bottomAnchor, constant: 30),
             categoriesLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             
             categoriesCollectionView.topAnchor.constraint(equalTo: categoriesLabel.bottomAnchor, constant: 20),
             categoriesCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             categoriesCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             categoriesCollectionView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            categoriesCollectionView.heightAnchor.constraint(equalToConstant: 600)
+            categoriesCollectionView.heightAnchor.constraint(equalToConstant: 700)
         ])
         
         askAIButton.addTarget(self, action: #selector(askAIButtonTapped), for: .touchUpInside)
@@ -239,19 +265,18 @@ class HomeViewController: UIViewController {
         
         switch hour {
         case 6..<12:
-            greeting = "Günaydın"
+            greeting = "GOOD MORNING"
         case 12..<17:
-            greeting = "İyi Günler"
+            greeting = "GOOD AFTERNOON"
         case 17..<22:
-            greeting = "İyi Akşamlar"
+            greeting = "GOOD EVENING"
         default:
-            greeting = "İyi Geceler"
+            greeting = "GOOD NIGHT"
         }
         
+        greetingLabel.text = greeting
         if !name.isEmpty {
-            greetingLabel.text = "\(greeting),\n\(name)"
-        } else {
-            greetingLabel.text = greeting
+            nameLabel.text = name
         }
     }
     
@@ -260,7 +285,7 @@ class HomeViewController: UIViewController {
         chatVC.modalPresentationStyle = .overFullScreen
         present(chatVC, animated: true)
     }
-    
+
     @objc private func friendsButtonTapped() {
         let friendsVC = FriendsViewController()
         let nav = UINavigationController(rootViewController: friendsVC)

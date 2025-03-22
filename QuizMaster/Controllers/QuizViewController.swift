@@ -73,13 +73,26 @@ class QuizViewController: UIViewController {
         return stack
     }()
     
-    private let nextButton: UIButton = {
+    private let askGPTButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Next", for: .normal)
+        button.setTitle("QuizGPT'ye sor", for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
         button.backgroundColor = .primaryPurple
         button.setTitleColor(.white, for: .normal)
         button.layer.cornerRadius = 25
+        button.isHidden = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
+    private let nextButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Next", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+        button.backgroundColor = .systemGray5
+        button.setTitleColor(.black, for: .normal)
+        button.layer.cornerRadius = 25
+        button.isHidden = true
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -125,6 +138,7 @@ class QuizViewController: UIViewController {
         view.addSubview(questionContainer)
         questionContainer.addSubview(questionLabel)
         view.addSubview(optionsStackView)
+        view.addSubview(askGPTButton)
         view.addSubview(nextButton)
         
         setupTimerUI()
@@ -166,13 +180,20 @@ class QuizViewController: UIViewController {
             optionsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             optionsStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
+            askGPTButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            askGPTButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
+            askGPTButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.5, constant: -40),
+            askGPTButton.heightAnchor.constraint(equalToConstant: 50),
+            
             nextButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
-            nextButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
             nextButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -32),
+            nextButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.3, constant: -40),
             nextButton.heightAnchor.constraint(equalToConstant: 50)
         ])
         
         closeButton.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
+        askGPTButton.addTarget(self, action: #selector(askGPTButtonTapped), for: .touchUpInside)
+        nextButton.addTarget(self, action: #selector(nextButtonTapped), for: .touchUpInside)
     }
     
     private func setupTimerUI() {
@@ -204,6 +225,9 @@ class QuizViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] question in
                 self?.updateUI(with: question)
+                // Hide buttons when new question appears
+                self?.askGPTButton.isHidden = true
+                self?.nextButton.isHidden = true
             }
             .store(in: &cancellables)
         
@@ -389,11 +413,9 @@ class QuizViewController: UIViewController {
         var selectedIndex: Int
         
         if let optionImages = currentQuestion.optionImages, !optionImages.isEmpty {
-            // For image options, use the index
             selectedIndex = sender.tag
             selectedAnswer = currentQuestion.options[selectedIndex]
         } else {
-            // For text options, use the button title
             guard let buttonTitle = sender.title(for: .normal) else { return }
             selectedAnswer = buttonTitle
             selectedIndex = currentQuestion.options.firstIndex(of: buttonTitle) ?? 0
@@ -404,39 +426,31 @@ class QuizViewController: UIViewController {
         
         // Highlight correct and wrong answers
         if let optionImages = currentQuestion.optionImages, !optionImages.isEmpty {
-            // Handle image options
             if let gridContainer = optionsStackView.arrangedSubviews.first as? UIStackView {
                 var allOptionViews: [UIView] = []
                 
-                // Collect all option views in order
                 for rowStack in gridContainer.arrangedSubviews {
                     guard let row = rowStack as? UIStackView else { continue }
                     allOptionViews.append(contentsOf: row.arrangedSubviews)
                 }
                 
-                // Find correct answer index
                 let correctIndex = currentQuestion.options.firstIndex(of: currentQuestion.correctAnswer) ?? -1
                 
-                // Update UI for each option
                 for (index, optionContainer) in allOptionViews.enumerated() {
                     if index == correctIndex {
-                        // Correct answer
                         optionContainer.layer.borderWidth = 3
                         optionContainer.layer.borderColor = UIColor.systemGreen.cgColor
                     } else if index == selectedIndex && index != correctIndex {
-                        // Wrong answer
                         optionContainer.layer.borderWidth = 3
                         optionContainer.layer.borderColor = UIColor.systemRed.cgColor
                     }
                     
-                    // Disable button
                     if let button = optionContainer.subviews.last as? UIButton {
                         button.isEnabled = false
                     }
                 }
             }
         } else {
-            // Handle text options
             optionsStackView.arrangedSubviews.forEach { view in
                 guard let containerView = view as? UIView,
                       let button = containerView.subviews.first(where: { $0 is UIButton }) as? UIButton,
@@ -453,10 +467,38 @@ class QuizViewController: UIViewController {
             }
         }
         
-        // Wait for a moment before moving to the next question
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            self?.viewModel.nextQuestion()
+        // Show Ask GPT and Next buttons if answer is wrong
+        let isCorrect = selectedAnswer == currentQuestion.correctAnswer
+        askGPTButton.isHidden = isCorrect
+        nextButton.isHidden = isCorrect
+        
+        // Wait for a moment before moving to the next question if correct
+        if isCorrect {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                self?.viewModel.nextQuestion()
+            }
         }
+    }
+    
+    @objc private func askGPTButtonTapped() {
+        guard let currentQuestion = viewModel.currentQuestion else { return }
+        
+        let chatVC = ChatViewController()
+        chatVC.modalPresentationStyle = .pageSheet
+        
+        // Soruyu ve kullanıcının cevabını hazırla
+        let questionText = "Question: \(currentQuestion.text)\n" +
+                         "Correct Answer: \(currentQuestion.correctAnswer)\n" +
+                         "Why is this answer correct and the others incorrect? Can you explain in detail?"
+        
+        // ChatViewController'a soruyu gönder
+        chatVC.presetMessage = questionText
+        
+        present(chatVC, animated: true)
+    }
+    
+    @objc private func nextButtonTapped() {
+        viewModel.nextQuestion()
     }
     
     private func showResults() {

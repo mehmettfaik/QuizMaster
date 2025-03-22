@@ -70,6 +70,8 @@ class CategoryCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
+        contentView.layer.masksToBounds = false // Gölgenin görünmesi için false olmalı
+        layer.masksToBounds = false // Gölgenin görünmesi için false olmalı
         setupUI()
     }
     
@@ -250,50 +252,63 @@ class CategoryCell: UICollectionViewCell {
     
     private func applyModernStyle() {
         backgroundColor = .clear
-        containerView.backgroundColor = .backgroundPurple
+        containerView.backgroundColor = .white
         containerView.layer.cornerRadius = 16
+        containerView.layer.masksToBounds = false // Gölgenin görünmesi için false olmalı
+        
+        // Gölge efekti ayarları
+        containerView.layer.shadowColor = UIColor.black.cgColor
+        containerView.layer.shadowOffset = CGSize(width: 0, height: 4)
+        containerView.layer.shadowRadius = 8
+        containerView.layer.shadowOpacity = 0.1
         
         iconLabel.isHidden = true
-        titleLabel.font = .systemFont(ofSize: 18, weight: .semibold)
+        titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
+        titleLabel.textColor = .black
         titleLabel.textAlignment = .left
+        
+        subtitleLabel.font = .systemFont(ofSize: 16)
+        subtitleLabel.textColor = .systemGray
+        subtitleLabel.text = "Easy Medium Hard"
         subtitleLabel.isHidden = false
+        
         iconImageView.isHidden = false
-        favoriteButton.isHidden = false  // Show favorite button in modern style
+        iconImageView.tintColor = .primaryPurple
+        iconImageView.contentMode = .scaleAspectFit
+        
+        favoriteButton.isHidden = false
+        favoriteButton.tintColor = .systemRed
+        favoriteButton.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
         
         // Reset constraints
         titleLabel.removeFromSuperview()
         subtitleLabel.removeFromSuperview()
         iconImageView.removeFromSuperview()
         favoriteButton.removeFromSuperview()
+        containerView.addSubview(iconImageView)
         containerView.addSubview(titleLabel)
         containerView.addSubview(subtitleLabel)
-        containerView.addSubview(iconImageView)
         containerView.addSubview(favoriteButton)
         
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            iconImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            iconImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            iconImageView.heightAnchor.constraint(equalToConstant: 40),
+            iconImageView.widthAnchor.constraint(equalToConstant: 40),
+            
+            titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 16),
+            titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 20),
             titleLabel.trailingAnchor.constraint(equalTo: favoriteButton.leadingAnchor, constant: -16),
             
-            favoriteButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            subtitleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 16),
+            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+            subtitleLabel.trailingAnchor.constraint(equalTo: favoriteButton.leadingAnchor, constant: -16),
+            
+            favoriteButton.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             favoriteButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
             favoriteButton.widthAnchor.constraint(equalToConstant: 44),
-            favoriteButton.heightAnchor.constraint(equalToConstant: 44),
-            
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            subtitleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            subtitleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            
-            iconImageView.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 12),
-            iconImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            iconImageView.heightAnchor.constraint(equalToConstant: 24),
-            iconImageView.widthAnchor.constraint(equalToConstant: 24)
+            favoriteButton.heightAnchor.constraint(equalToConstant: 44)
         ])
-        
-        containerView.layer.shadowColor = UIColor.black.cgColor
-        containerView.layer.shadowOffset = CGSize(width: 0, height: 2)
-        containerView.layer.shadowRadius = 6
-        containerView.layer.shadowOpacity = 0.1
     }
     
     func configure(title: String, icon: String? = nil, systemImage: String? = nil, style: Style = .classic, isFavorite: Bool = false, questionCount: Int? = nil) {
@@ -340,10 +355,10 @@ class CategoryCell: UICollectionViewCell {
         }
     }
     
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        if style == .modern {
-            containerView.layer.shadowPath = UIBezierPath(roundedRect: containerView.bounds, cornerRadius: 16).cgPath
-        }
-    }
-} 
+    //override func layoutSubviews() {
+      //  super.layoutSubviews()
+        //if style == .classic {
+          //  containerView.layer.shadowPath = UIBezierPath(roundedRect: containerView.bounds, cornerRadius: 16).cgPath
+        //}
+  //  }
+}

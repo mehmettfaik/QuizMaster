@@ -23,24 +23,41 @@ class SearchViewController: UIViewController {
     private var filteredCategories: [(title: String, icon: String)] = []
     private var isSearching: Bool = false
     
+    private let headerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .primaryPurple
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     private let searchBar: UISearchBar = {
         let searchBar = UISearchBar()
         searchBar.placeholder = "Search..."
         searchBar.searchBarStyle = .minimal
-        searchBar.backgroundColor = .white
+        searchBar.backgroundColor = .clear
+        searchBar.searchTextField.backgroundColor = .white
+        searchBar.searchTextField.layer.cornerRadius = 10
+        searchBar.searchTextField.clipsToBounds = true
+        searchBar.tintColor = .primaryPurple
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         return searchBar
     }()
-  
     
     public let segmentedControl: UISegmentedControl = {
         let items = ["Categories", "Favorites", "Top Quiz"]
         let control = UISegmentedControl(items: items)
         control.selectedSegmentIndex = 0
-        control.selectedSegmentTintColor = .primaryPurple
-        control.backgroundColor = .white
-        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
-        control.setTitleTextAttributes([.foregroundColor: UIColor.primaryPurple], for: .normal)
+        control.selectedSegmentTintColor = .white
+        control.backgroundColor = UIColor.white.withAlphaComponent(0.3)
+        control.setTitleTextAttributes([
+            .foregroundColor: UIColor.white.withAlphaComponent(0.7)
+        ], for: .normal)
+        control.setTitleTextAttributes([
+            .foregroundColor: UIColor.primaryPurple,
+            .font: UIFont.systemFont(ofSize: 14, weight: .semibold)
+        ], for: .selected)
+        control.layer.cornerRadius = 8
+        control.clipsToBounds = true
         control.translatesAutoresizingMaskIntoConstraints = false
         return control
     }()
@@ -52,10 +69,28 @@ class SearchViewController: UIViewController {
         layout.minimumInteritemSpacing = 16
         layout.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.backgroundColor = .white
+        collectionView.backgroundColor = .systemBackground
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         return collectionView
     }()
+    
+    private let noResultsLabel: UILabel = {
+        let label = UILabel()
+        label.text = "No Results Found"
+        label.font = .systemFont(ofSize: 18, weight: .medium)
+        label.textColor = .gray
+        label.textAlignment = .center
+        label.isHidden = true
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let topQuizCategories = [
+        ("Computer Science", "desktopcomputer"),
+        ("General Culture", "globe"),
+        ("Art", "paintpalette.fill"),
+        ("Celebrity", "star.fill")
+    ]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -65,30 +100,41 @@ class SearchViewController: UIViewController {
         setupViewModel()
         setupSegmentedControl()
         
-        // Başlangıçta tüm kategorileri göster
         filteredCategories = categories
     }
     
     private func setupUI() {
-        view.backgroundColor = .white
+        view.backgroundColor = .systemBackground
         
-        view.addSubview(searchBar)
-        view.addSubview(segmentedControl)
+        view.addSubview(headerView)
+        headerView.addSubview(searchBar)
+        headerView.addSubview(segmentedControl)
         view.addSubview(collectionView)
+        view.addSubview(noResultsLabel)
         
         NSLayoutConstraint.activate([
+            headerView.topAnchor.constraint(equalTo: view.topAnchor),
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            headerView.heightAnchor.constraint(equalToConstant: 180),
+            
             searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            searchBar.heightAnchor.constraint(equalToConstant: 44),
             
             segmentedControl.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 16),
             segmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             segmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            segmentedControl.heightAnchor.constraint(equalToConstant: 40),
             
-            collectionView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 16),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            collectionView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            noResultsLabel.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
+            noResultsLabel.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor)
         ])
     }
     
@@ -134,12 +180,12 @@ class SearchViewController: UIViewController {
             case 1: // Favorites
                 filteredCategories = categories.filter { favoriteCategories.contains($0.title) }
             case 2: // Top Quiz
-                quizListViewModel.fetchQuizzes(searchText: searchText)
-                filteredCategories = []
+                filteredCategories = topQuizCategories
             default:
                 filteredCategories = []
             }
             isSearching = false
+            noResultsLabel.isHidden = true
         } else {
             isSearching = true
             switch segmentedControl.selectedSegmentIndex {
@@ -153,11 +199,13 @@ class SearchViewController: UIViewController {
                     category.title.lowercased().contains(searchText.lowercased())
                 }
             case 2: // Top Quiz
-                quizListViewModel.fetchQuizzes(searchText: searchText)
-                filteredCategories = []
+                filteredCategories = topQuizCategories.filter { category in
+                    category.0.lowercased().contains(searchText.lowercased())
+                }
             default:
                 filteredCategories = []
             }
+            noResultsLabel.isHidden = !filteredCategories.isEmpty
         }
         collectionView.reloadData()
     }
@@ -189,26 +237,28 @@ class SearchViewController: UIViewController {
 
 extension SearchViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if segmentedControl.selectedSegmentIndex == 0 || segmentedControl.selectedSegmentIndex == 1 {
-            return filteredCategories.isEmpty && isSearching ? 1 : filteredCategories.count
-        }
-        return 0
+        return filteredCategories.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CategoryCell", for: indexPath) as! CategoryCell
         
-        if segmentedControl.selectedSegmentIndex == 0 || segmentedControl.selectedSegmentIndex == 1 {
-            if filteredCategories.isEmpty && isSearching {
-                cell.configure(title: "No results found", systemImage: "xmark.circle.fill", style: .modern)
+        let category = filteredCategories[indexPath.item]
+        let isFavorite = favoriteCategories.contains(category.0)
+        
+        if segmentedControl.selectedSegmentIndex == 2 {
+            // Top Quiz için
+            cell.configure(title: category.0, systemImage: category.1, style: .modern, isFavorite: isFavorite)
+        } else {
+            // Categories ve Favorites için
+            cell.configure(title: category.title, systemImage: category.icon, style: .modern, isFavorite: isFavorite)
+        }
+        
+        cell.onFavoriteButtonTapped = { [weak self] in
+            if self?.segmentedControl.selectedSegmentIndex == 2 {
+                self?.toggleFavorite(for: category.0)
             } else {
-                let category = filteredCategories[indexPath.item]
-                let isFavorite = favoriteCategories.contains(category.title)
-                cell.configure(title: category.title, systemImage: category.icon, style: .modern, isFavorite: isFavorite)
-                
-                cell.onFavoriteButtonTapped = { [weak self] in
-                    self?.toggleFavorite(for: category.title)
-                }
+                self?.toggleFavorite(for: category.title)
             }
         }
         
@@ -217,13 +267,19 @@ extension SearchViewController: UICollectionViewDelegate, UICollectionViewDataSo
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let width = collectionView.bounds.width - 32 // Full width minus padding
-        return CGSize(width: width, height: 120) // Daha yüksek bir hücre
+        return CGSize(width: width, height: 120)
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if !filteredCategories.isEmpty {
-            let category = filteredCategories[indexPath.item]
-            let difficultyVC = DifficultyViewController(category: category.title)
+            let category: String
+            if segmentedControl.selectedSegmentIndex == 2 {
+                category = filteredCategories[indexPath.item].0
+            } else {
+                category = filteredCategories[indexPath.item].title
+            }
+            
+            let difficultyVC = DifficultyViewController(category: category)
             difficultyVC.modalPresentationStyle = .fullScreen
             present(difficultyVC, animated: true)
         }

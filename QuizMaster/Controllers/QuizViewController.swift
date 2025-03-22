@@ -31,9 +31,6 @@ class QuizViewController: UIViewController {
     private let timerContainer: UIView = {
         let view = UIView()
         view.backgroundColor = .white
-        view.layer.cornerRadius = 30
-        view.layer.borderWidth = 3
-        view.layer.borderColor = UIColor.primaryPurple.cgColor
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -41,11 +38,14 @@ class QuizViewController: UIViewController {
     private let timerLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 24, weight: .bold)
-        label.textColor = .primaryPurple
+        label.textColor = .black
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
+    
+    private let circularProgressLayer = CAShapeLayer()
+    private let trackLayer = CAShapeLayer()
     
     private let questionContainer: UIView = {
         let view = UIView()
@@ -109,8 +109,12 @@ class QuizViewController: UIViewController {
         view.backgroundColor = .white
         
         let closeButton = UIButton(type: .system)
-        closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
+        closeButton.setImage(UIImage(systemName: "xmark")?.withConfiguration(
+            UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        ), for: .normal)
+        closeButton.backgroundColor = UIColor.black.withAlphaComponent(0.1)
         closeButton.tintColor = .black
+        closeButton.layer.cornerRadius = 15
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         
         view.addSubview(closeButton)
@@ -123,11 +127,13 @@ class QuizViewController: UIViewController {
         view.addSubview(optionsStackView)
         view.addSubview(nextButton)
         
+        setupTimerUI()
+        
         NSLayoutConstraint.activate([
             closeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
             closeButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            closeButton.widthAnchor.constraint(equalToConstant: 44),
-            closeButton.heightAnchor.constraint(equalToConstant: 44),
+            closeButton.widthAnchor.constraint(equalToConstant: 30),
+            closeButton.heightAnchor.constraint(equalToConstant: 30),
             
             progressView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
             progressView.leadingAnchor.constraint(equalTo: closeButton.trailingAnchor, constant: 16),
@@ -167,6 +173,30 @@ class QuizViewController: UIViewController {
         ])
         
         closeButton.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
+    }
+    
+    private func setupTimerUI() {
+        // Setup track layer
+        let circularPath = UIBezierPath(arcCenter: CGPoint(x: 30, y: 30),
+                                      radius: 30,
+                                      startAngle: -CGFloat.pi / 2,
+                                      endAngle: 2 * CGFloat.pi - CGFloat.pi / 2,
+                                      clockwise: true)
+        
+        trackLayer.path = circularPath.cgPath
+        trackLayer.strokeColor = UIColor.systemGray4.cgColor
+        trackLayer.lineWidth = 6
+        trackLayer.fillColor = UIColor.clear.cgColor
+        timerContainer.layer.addSublayer(trackLayer)
+        
+        // Setup progress layer
+        circularProgressLayer.path = circularPath.cgPath
+        circularProgressLayer.strokeColor = UIColor.primaryPurple.cgColor
+        circularProgressLayer.lineWidth = 6
+        circularProgressLayer.fillColor = UIColor.clear.cgColor
+        circularProgressLayer.lineCap = .round
+        circularProgressLayer.strokeEnd = 1.0
+        timerContainer.layer.addSublayer(circularProgressLayer)
     }
     
     private func setupBindings() {
@@ -331,10 +361,20 @@ class QuizViewController: UIViewController {
     
     private func updateTimerLabel() {
         timerLabel.text = "\(timeLeft)"
+        
+        // Calculate progress and color
+        let progress = CGFloat(timeLeft) / 10.0
+        let color = UIColor.interpolate(from: .systemGray4, to: .primaryPurple, with: progress)
+        
+        // Update progress layer
+        circularProgressLayer.strokeEnd = progress
+        circularProgressLayer.strokeColor = color.cgColor
+        
+        // Update label color
         if timeLeft <= 3 {
             timerLabel.textColor = .systemRed
         } else {
-            timerLabel.textColor = .primaryPurple
+            timerLabel.textColor = .black
         }
     }
     
@@ -432,5 +472,28 @@ class QuizViewController: UIViewController {
     
     deinit {
         timer?.invalidate()
+    }
+}
+
+extension UIColor {
+    static func interpolate(from: UIColor, to: UIColor, with progress: CGFloat) -> UIColor {
+        var fromRed: CGFloat = 0
+        var fromGreen: CGFloat = 0
+        var fromBlue: CGFloat = 0
+        var fromAlpha: CGFloat = 0
+        from.getRed(&fromRed, green: &fromGreen, blue: &fromBlue, alpha: &fromAlpha)
+        
+        var toRed: CGFloat = 0
+        var toGreen: CGFloat = 0
+        var toBlue: CGFloat = 0
+        var toAlpha: CGFloat = 0
+        to.getRed(&toRed, green: &toGreen, blue: &toBlue, alpha: &toAlpha)
+        
+        let red = fromRed + (toRed - fromRed) * progress
+        let green = fromGreen + (toGreen - fromGreen) * progress
+        let blue = fromBlue + (toBlue - fromBlue) * progress
+        let alpha = fromAlpha + (toAlpha - fromAlpha) * progress
+        
+        return UIColor(red: red, green: green, blue: blue, alpha: alpha)
     }
 } 

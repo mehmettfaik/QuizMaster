@@ -150,7 +150,7 @@ class HomeViewController: UIViewController {
         ("Vehicle", "🚗", 50),
         ("Science", "🔬", 30),
         ("Sports", "⚽️", 95),
-        ("History", "📚", 128),
+        ("History", "🏛️", 128),
         ("Art", "🎨", 30),
         ("Diğer", "⏩", 24)
     ]
@@ -362,15 +362,20 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
         let category = categories[indexPath.item]
         
         if category.title == "Diğer" {
-            // Dismiss current view controller to return to TabBarController
-            dismiss(animated: true) { [weak self] in
-                // Get reference to TabBarController and switch to Search tab (assuming it's index 1)
-                if let tabBarController = UIApplication.shared.windows.first?.rootViewController as? UITabBarController {
-                    tabBarController.selectedIndex = 1
-                    // Get reference to SearchViewController and update its state
-                    if let searchVC = tabBarController.selectedViewController as? SearchViewController {
-                        searchVC.segmentedControl.selectedSegmentIndex = 0
-                        searchVC.segmentedControlValueChanged()
+            if let cell = collectionView.cellForItem(at: indexPath) as? CategoryCell {
+                cell.triggerShakeAnimation()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    // Dismiss current view controller to return to TabBarController
+                    self.dismiss(animated: true) { [weak self] in
+                        // Get reference to TabBarController and switch to Search tab (assuming it's index 1)
+                        if let tabBarController = UIApplication.shared.windows.first?.rootViewController as? UITabBarController {
+                            tabBarController.selectedIndex = 1
+                            // Get reference to SearchViewController and update its state
+                            if let searchVC = tabBarController.selectedViewController as? SearchViewController {
+                                searchVC.segmentedControl.selectedSegmentIndex = 0
+                                searchVC.segmentedControlValueChanged()
+                            }
+                        }
                     }
                 }
             }
@@ -379,6 +384,34 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
                 if category.title == "Vehicle" {
                     cell.animateIconExit()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        let difficultyVC = DifficultyViewController(category: category.title)
+                        difficultyVC.modalPresentationStyle = .fullScreen
+                        self.present(difficultyVC, animated: true)
+                    }
+                } else if category.title == "Sports" {
+                    cell.triggerSportsAnimation()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                        let difficultyVC = DifficultyViewController(category: category.title)
+                        difficultyVC.modalPresentationStyle = .fullScreen
+                        self.present(difficultyVC, animated: true)
+                    }
+                } else if category.title == "Art" {
+                    cell.triggerArtAnimation()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+                        let difficultyVC = DifficultyViewController(category: category.title)
+                        difficultyVC.modalPresentationStyle = .fullScreen
+                        self.present(difficultyVC, animated: true)
+                    }
+                } else if category.title == "Science" {
+                    cell.triggerScienceAnimation()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        let difficultyVC = DifficultyViewController(category: category.title)
+                        difficultyVC.modalPresentationStyle = .fullScreen
+                        self.present(difficultyVC, animated: true)
+                    }
+                } else if category.title == "History" {
+                    cell.triggerHistoryAnimation()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                         let difficultyVC = DifficultyViewController(category: category.title)
                         difficultyVC.modalPresentationStyle = .fullScreen
                         self.present(difficultyVC, animated: true)

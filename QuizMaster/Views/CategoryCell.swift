@@ -176,78 +176,91 @@ class CategoryCell: UICollectionViewCell {
     }
     
     private func addBubbleAnimation() {
-        UIView.animate(withDuration: 1.0, delay: 0, options: [.repeat, .autoreverse], animations: {
-            self.iconLabel.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
-            self.iconLabel.alpha = 0.7
-        })
+        // Reset any existing animations
+        iconLabel.layer.removeAllAnimations()
+        iconLabel.transform = .identity
+        
+        // Zoom in animation
+        UIView.animate(withDuration: 0.3, animations: {
+            self.iconLabel.transform = CGAffineTransform(scaleX: 1.5, y: 1.5)
+        }) { _ in
+            // Zoom out animation
+            UIView.animate(withDuration: 0.2, animations: {
+                self.iconLabel.transform = .identity
+            })
+        }
     }
     
     private func addBounceAnimation() {
-        let jumpHeight: CGFloat = -200  // Çok daha yüksek zıplama
-        
-        // Başlangıç pozisyonunu ayarla
+        // Reset any existing animations
+        iconLabel.layer.removeAllAnimations()
         iconLabel.transform = .identity
         
-        let springTiming = UISpringTimingParameters(dampingRatio: 0.5, initialVelocity: CGVector(dx: 0, dy: 10))
+        // Initial position - start from above the normal position
+        iconLabel.transform = CGAffineTransform(translationX: 0, y: -100)
         
-        let animator = UIViewPropertyAnimator(duration: 2.0, timingParameters: springTiming)
-        
-        animator.addAnimations {
-            UIView.animateKeyframes(withDuration: 2.0, delay: 0, options: [.calculationModeCubic], animations: {
-                // İlk zıplama - Yükselme
-                UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.3) {
-                    self.iconLabel.transform = CGAffineTransform(translationX: 0, y: jumpHeight)
-                        .rotated(by: .pi * 0.5)
-                        .scaledBy(x: 0.7, y: 0.7)
-                }
-                
-                // Düşme ve sıkışma
-                UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.2) {
-                    self.iconLabel.transform = CGAffineTransform(translationX: 0, y: 0)
-                        .scaledBy(x: 1.3, y: 0.7)
-                }
-                
-                // İkinci zıplama - daha alçak
-                UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.2) {
-                    self.iconLabel.transform = CGAffineTransform(translationX: 0, y: jumpHeight/2)
-                        .rotated(by: .pi)
-                        .scaledBy(x: 0.8, y: 0.8)
-                }
-                
-                // Son düşüş ve normale dönüş
-                UIView.addKeyframe(withRelativeStartTime: 0.7, relativeDuration: 0.3) {
-                    self.iconLabel.transform = .identity
-                }
+        // First animation - drop with bounce
+        UIView.animate(withDuration: 0.7, delay: 0, usingSpringWithDamping: 0.5, initialSpringVelocity: 1.0, options: [], animations: {
+            self.iconLabel.transform = .identity
+        }) { _ in
+            // Second animation - small continuous bounce
+            UIView.animate(withDuration: 0.4, delay: 0, options: [.repeat, .autoreverse], animations: {
+                self.iconLabel.transform = CGAffineTransform(translationX: 0, y: 8)
             })
         }
-        
-        animator.addCompletion { _ in
-            // Animasyonu tekrarla
-            self.addBounceAnimation()
-        }
-        
-        animator.startAnimation()
     }
     
     private func addFlipAnimation() {
-        UIView.animate(withDuration: 1.5, delay: 0, options: [.repeat], animations: {
-            self.iconLabel.transform = CGAffineTransform(rotationAngle: .pi * 2)
-        })
+        // Reset any existing animations
+        iconLabel.layer.removeAllAnimations()
+        iconLabel.transform = .identity
+        
+        // Create rotation animation
+        let rotationAnimation = CABasicAnimation(keyPath: "transform.rotation")
+        rotationAnimation.fromValue = 0
+        rotationAnimation.toValue = CGFloat.pi * 2  // 360 degrees
+        rotationAnimation.duration = 0.6
+        rotationAnimation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        
+        // Add animation to layer
+        iconLabel.layer.add(rotationAnimation, forKey: "rotationAnimation")
     }
     
     private func addRotateAnimation() {
-        let rotation = CABasicAnimation(keyPath: "transform.rotation")
-        rotation.fromValue = 0
-        rotation.toValue = Double.pi * 2
-        rotation.duration = 2
-        rotation.repeatCount = .infinity
-        iconLabel.layer.add(rotation, forKey: "rotationAnimation")
+        // Reset any existing animations
+        iconLabel.layer.removeAllAnimations()
+        iconLabel.transform = .identity
+        
+        // First rotate animation
+        UIView.animate(withDuration: 0.5, animations: {
+            self.iconLabel.transform = CGAffineTransform(rotationAngle: .pi * 1.5)
+        }) { _ in
+            // Then drop animation
+            UIView.animate(withDuration: 0.4, delay: 0, options: .curveEaseIn, animations: {
+                self.iconLabel.transform = CGAffineTransform(translationX: 0, y: self.containerView.bounds.height)
+            }) { _ in
+                // Reset position
+                self.iconLabel.transform = .identity
+            }
+        }
     }
     
     private func addPulseAnimation() {
         UIView.animate(withDuration: 1.0, delay: 0, options: [.repeat, .autoreverse], animations: {
             self.iconLabel.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
         })
+    }
+    
+    private func addShakeAnimation() {
+        // Reset any existing animations
+        iconLabel.layer.removeAllAnimations()
+        iconLabel.transform = .identity
+        
+        let shakeAnimation = CAKeyframeAnimation(keyPath: "transform.translation.x")
+        shakeAnimation.timingFunction = CAMediaTimingFunction(name: .linear)
+        shakeAnimation.duration = 0.6
+        shakeAnimation.values = [-5.0, 5.0, -5.0, 5.0, -3.0, 3.0, -1.0, 1.0, 0.0]
+        iconLabel.layer.add(shakeAnimation, forKey: "shake")
     }
     
     private func applyModernStyle() {
@@ -353,6 +366,31 @@ class CategoryCell: UICollectionViewCell {
         } completion: { _ in
             self.iconLabel.transform = .identity
         }
+    }
+    
+    func triggerSportsAnimation() {
+        guard categoryTitle.lowercased() == "sports" else { return }
+        addBounceAnimation()
+    }
+    
+    func triggerArtAnimation() {
+        guard categoryTitle.lowercased() == "art" else { return }
+        addRotateAnimation()
+    }
+    
+    func triggerShakeAnimation() {
+        guard categoryTitle == "Diğer" else { return }
+        addShakeAnimation()
+    }
+    
+    func triggerScienceAnimation() {
+        guard categoryTitle.lowercased() == "science" else { return }
+        addBubbleAnimation()
+    }
+    
+    func triggerHistoryAnimation() {
+        guard categoryTitle.lowercased() == "history" else { return }
+        addFlipAnimation()
     }
     
     //override func layoutSubviews() {

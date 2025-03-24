@@ -404,6 +404,48 @@ class QuizViewController: UIViewController {
     
     private func handleTimeUp() {
         viewModel.answerQuestion(nil)
+        // Show Ask GPT and Next buttons when time runs out
+        askGPTButton.isHidden = false
+        nextButton.isHidden = false
+        
+        // Highlight correct answer in green
+        guard let currentQuestion = viewModel.currentQuestion else { return }
+        
+        if let optionImages = currentQuestion.optionImages, !optionImages.isEmpty {
+            if let gridContainer = optionsStackView.arrangedSubviews.first as? UIStackView {
+                var allOptionViews: [UIView] = []
+                
+                for rowStack in gridContainer.arrangedSubviews {
+                    guard let row = rowStack as? UIStackView else { continue }
+                    allOptionViews.append(contentsOf: row.arrangedSubviews)
+                }
+                
+                let correctIndex = currentQuestion.options.firstIndex(of: currentQuestion.correctAnswer) ?? -1
+                
+                for (index, optionContainer) in allOptionViews.enumerated() {
+                    if index == correctIndex {
+                        optionContainer.layer.borderWidth = 3
+                        optionContainer.layer.borderColor = UIColor.systemGreen.cgColor
+                    }
+                    
+                    if let button = optionContainer.subviews.last as? UIButton {
+                        button.isEnabled = false
+                    }
+                }
+            }
+        } else {
+            optionsStackView.arrangedSubviews.forEach { view in
+                guard let containerView = view as? UIView,
+                      let button = containerView.subviews.first(where: { $0 is UIButton }) as? UIButton,
+                      let title = button.title(for: .normal) else { return }
+                
+                if title == currentQuestion.correctAnswer {
+                    containerView.backgroundColor = .systemGreen.withAlphaComponent(0.3)
+                    button.setTitleColor(.systemGreen, for: .normal)
+                }
+                button.isEnabled = false
+            }
+        }
     }
     
     @objc private func optionButtonTapped(_ sender: UIButton) {

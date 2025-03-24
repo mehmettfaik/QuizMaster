@@ -111,18 +111,22 @@ class ProfileViewController: UIViewController {
         imageView.contentMode = .scaleAspectFit
         imageView.clipsToBounds = true
         imageView.backgroundColor = .clear
-        imageView.layer.cornerRadius = 60
+        imageView.layer.cornerRadius = 70
         imageView.layer.masksToBounds = true
-        imageView.layer.borderWidth = 1
-        imageView.layer.borderColor = UIColor.systemGray4.cgColor
+        imageView.layer.borderWidth = 4
+        imageView.layer.borderColor = UIColor.primaryPurple.cgColor
+        imageView.layer.shadowColor = UIColor.primaryPurple.cgColor
+        imageView.layer.shadowOffset = CGSize(width: 0, height: 4)
+        imageView.layer.shadowOpacity = 0.3
+        imageView.layer.shadowRadius = 8
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
     
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 24, weight: .bold)
-        label.textColor = .black
+        label.font = .systemFont(ofSize: 32, weight: .bold)
+        label.textColor = .primaryPurple
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -131,7 +135,7 @@ class ProfileViewController: UIViewController {
     private let emailLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16)
-        label.textColor = .gray
+        label.textColor = .systemGray
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -140,8 +144,8 @@ class ProfileViewController: UIViewController {
     private let achievementsLabel: UILabel = {
         let label = UILabel()
         label.text = "Başarı Rozetleri"
-        label.font = .systemFont(ofSize: 20, weight: .bold)
-        label.textColor = .black
+        label.font = .systemFont(ofSize: 28, weight: .bold)
+        label.textColor = .primaryPurple
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -149,8 +153,8 @@ class ProfileViewController: UIViewController {
     private let achievementsCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
-        layout.minimumLineSpacing = 16
-        layout.minimumInteritemSpacing = 16
+        layout.minimumLineSpacing = 20
+        layout.minimumInteritemSpacing = 20
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .clear
         collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -170,8 +174,12 @@ class ProfileViewController: UIViewController {
         button.setTitle("Çıkış Yap", for: .normal)
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = .systemRed
-        button.layer.cornerRadius = 12
-        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        button.layer.cornerRadius = 20
+        button.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+        button.layer.shadowColor = UIColor.systemRed.cgColor
+        button.layer.shadowOffset = CGSize(width: 0, height: 4)
+        button.layer.shadowOpacity = 0.3
+        button.layer.shadowRadius = 8
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -181,8 +189,8 @@ class ProfileViewController: UIViewController {
         button.setImage(UIImage(systemName: "gearshape.fill"), for: .normal)
         button.tintColor = .primaryPurple
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.widthAnchor.constraint(equalToConstant: 30).isActive = true
-        button.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        button.widthAnchor.constraint(equalToConstant: 44).isActive = true
+        button.heightAnchor.constraint(equalToConstant: 44).isActive = true
         return button
     }()
     
@@ -191,8 +199,12 @@ class ProfileViewController: UIViewController {
         button.setTitle("Arkadaşlarım", for: .normal)
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = .primaryPurple
-        button.layer.cornerRadius = 12
-        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        button.layer.cornerRadius = 20
+        button.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+        button.layer.shadowColor = UIColor.primaryPurple.cgColor
+        button.layer.shadowOffset = CGSize(width: 0, height: 4)
+        button.layer.shadowOpacity = 0.3
+        button.layer.shadowRadius = 8
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -214,7 +226,18 @@ class ProfileViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = .white
+        view.backgroundColor = .systemBackground
+        
+        // Gradient background for the top section
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.colors = [
+            UIColor.primaryPurple.withAlphaComponent(0.5).cgColor, // Daha koyu başlangıç
+            //UIColor.primaryPurple.withAlphaComponent(0.15).cgColor,
+            UIColor.systemBackground.cgColor
+        ]
+        gradientLayer.locations = [0.0, 1.0] // Üç noktalı geçiş
+        gradientLayer.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: 300)
+        view.layer.insertSublayer(gradientLayer, at: 0)
         
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
@@ -241,11 +264,11 @@ class ProfileViewController: UIViewController {
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             
             profileImageView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            profileImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            profileImageView.widthAnchor.constraint(equalToConstant: 120),
-            profileImageView.heightAnchor.constraint(equalToConstant: 120),
+            profileImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 40),
+            profileImageView.widthAnchor.constraint(equalToConstant: 160),
+            profileImageView.heightAnchor.constraint(equalToConstant: 160),
             
-            nameLabel.topAnchor.constraint(equalTo: profileImageView.bottomAnchor, constant: 16),
+            nameLabel.topAnchor.constraint(equalTo: profileImageView.bottomAnchor, constant: 24),
             nameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             nameLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
@@ -253,25 +276,25 @@ class ProfileViewController: UIViewController {
             emailLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             emailLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
-            friendsButton.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 24),
-            friendsButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 40),
-            friendsButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -40),
-            friendsButton.heightAnchor.constraint(equalToConstant: 50),
+            friendsButton.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 40),
+            friendsButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 30),
+            friendsButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -30),
+            friendsButton.heightAnchor.constraint(equalToConstant: 60),
             
-            achievementsLabel.topAnchor.constraint(equalTo: friendsButton.bottomAnchor, constant: 32),
+            achievementsLabel.topAnchor.constraint(equalTo: friendsButton.bottomAnchor, constant: 50),
             achievementsLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             achievementsLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
-            achievementsCollectionView.topAnchor.constraint(equalTo: achievementsLabel.bottomAnchor, constant: 16),
+            achievementsCollectionView.topAnchor.constraint(equalTo: achievementsLabel.bottomAnchor, constant: 24),
             achievementsCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             achievementsCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             achievementsCollectionView.heightAnchor.constraint(equalToConstant: 500),
             
-            signOutButton.topAnchor.constraint(equalTo: achievementsCollectionView.bottomAnchor, constant: 20),
-            signOutButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 40),
-            signOutButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -40),
-            signOutButton.heightAnchor.constraint(equalToConstant: 50),
-            signOutButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
+            signOutButton.topAnchor.constraint(equalTo: achievementsCollectionView.bottomAnchor, constant: 40),
+            signOutButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 30),
+            signOutButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -30),
+            signOutButton.heightAnchor.constraint(equalToConstant: 60),
+            signOutButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40),
             
             loadingIndicator.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             loadingIndicator.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
@@ -280,6 +303,7 @@ class ProfileViewController: UIViewController {
         // Profil fotoğrafı için placeholder
         profileImageView.image = UIImage(systemName: "person.circle.fill")
         profileImageView.tintColor = .primaryPurple
+        profileImageView.backgroundColor = .systemGray6
         
         // Sign Out action
         signOutButton.addTarget(self, action: #selector(signOutTapped), for: .touchUpInside)
@@ -423,7 +447,7 @@ extension ProfileViewController: UICollectionViewDataSource, UICollectionViewDel
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = (collectionView.bounds.width - 16) / 2
+        let width = (collectionView.bounds.width - 20) / 2
         return CGSize(width: width, height: 120)
     }
     
@@ -444,8 +468,12 @@ extension ProfileViewController: UICollectionViewDataSource, UICollectionViewDel
 class AchievementCell: UICollectionViewCell {
     private let containerView: UIView = {
         let view = UIView()
-        view.backgroundColor = .backgroundPurple
-        view.layer.cornerRadius = 12
+        view.backgroundColor = .systemBackground
+        view.layer.cornerRadius = 20
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOffset = CGSize(width: 0, height: 4)
+        view.layer.shadowOpacity = 0.15
+        view.layer.shadowRadius = 8
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -459,8 +487,8 @@ class AchievementCell: UICollectionViewCell {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .semibold)
-        label.textColor = .black
+        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.textColor = .primaryPurple
         label.textAlignment = .center
         label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -469,8 +497,8 @@ class AchievementCell: UICollectionViewCell {
     
     private let descriptionLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12)
-        label.textColor = .gray
+        label.font = .systemFont(ofSize: 14, weight: .medium) // Medium weight eklendi
+        label.textColor = .black // Rengi siyah yapıldı
         label.textAlignment = .center
         label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -481,8 +509,19 @@ class AchievementCell: UICollectionViewCell {
         let progress = UIProgressView(progressViewStyle: .default)
         progress.trackTintColor = .systemGray5
         progress.progressTintColor = .primaryPurple
+        progress.layer.cornerRadius = 6
+        progress.clipsToBounds = true
         progress.translatesAutoresizingMaskIntoConstraints = false
         return progress
+    }()
+    
+    private let progressLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 12, weight: .semibold)
+        label.textColor = .primaryPurple
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
     }()
     
     override init(frame: CGRect) {
@@ -500,6 +539,7 @@ class AchievementCell: UICollectionViewCell {
         containerView.addSubview(titleLabel)
         containerView.addSubview(descriptionLabel)
         containerView.addSubview(progressView)
+        containerView.addSubview(progressLabel)
         
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: contentView.topAnchor),
@@ -523,7 +563,11 @@ class AchievementCell: UICollectionViewCell {
             progressView.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 8),
             progressView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
             progressView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            progressView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16)
+            progressView.heightAnchor.constraint(equalToConstant: 6),
+            
+            progressLabel.topAnchor.constraint(equalTo: progressView.bottomAnchor, constant: 4),
+            progressLabel.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            progressLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12)
         ])
     }
     
@@ -533,6 +577,7 @@ class AchievementCell: UICollectionViewCell {
         iconImageView.image = UIImage(systemName: achievement.icon)
         iconImageView.tintColor = achievement.isUnlocked ? .primaryPurple : .gray
         progressView.progress = Float(achievement.progress)
+        progressLabel.text = "\(achievement.currentValue)/\(achievement.requirement)"
         
         // Kilitsiz/kilitli duruma göre opacity ayarla
         containerView.alpha = achievement.isUnlocked ? 1.0 : 0.7
@@ -544,6 +589,7 @@ class AchievementCell: UICollectionViewCell {
         iconImageView.image = UIImage(systemName: "star.circle")
         iconImageView.tintColor = .gray
         progressView.isHidden = true
+        progressLabel.isHidden = true
         containerView.alpha = 0.7
     }
 }

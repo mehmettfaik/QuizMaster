@@ -144,9 +144,39 @@ class OnlineBattleViewController: UIViewController {
     
     // MARK: - Firebase Operations
     private func getCurrentUser() {
-        guard let userId = UserDefaults.standard.string(forKey: "userId") else { return }
+        guard let userId = UserDefaults.standard.string(forKey: "userId") else {
+            showErrorAlert(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Kullanıcı bilgisi bulunamadı"]))
+            return
+        }
         currentUserId = userId
-        updateUserOnlineStatus(isOnline: true)
+        
+        // Önce kullanıcı dokümanını kontrol et
+        db.collection("users").document(userId).getDocument { [weak self] snapshot, error in
+            if let error = error {
+                self?.showErrorAlert(error)
+                return
+            }
+            
+            if snapshot?.exists == true {
+                // Doküman varsa online durumunu güncelle
+                self?.updateUserOnlineStatus(isOnline: true)
+            } else {
+                // Doküman yoksa yeni oluştur
+                let userData: [String: Any] = [
+                    "id": userId,
+                    "isOnline": true,
+                    "lastSeen": Timestamp(date: Date()),
+                    "name": UserDefaults.standard.string(forKey: "userName") ?? "Anonim",
+                    "avatar": UserDefaults.standard.string(forKey: "userAvatar") ?? "leo"
+                ]
+                
+                self?.db.collection("users").document(userId).setData(userData) { error in
+                    if let error = error {
+                        self?.showErrorAlert(error)
+                    }
+                }
+            }
+        }
     }
     
     private func updateUserOnlineStatus(isOnline: Bool) {
@@ -157,24 +187,58 @@ class OnlineBattleViewController: UIViewController {
             "lastSeen": Timestamp(date: Date())
         ]
         
-        db.collection("users").document(userId).updateData(data)
+        db.collection("users").document(userId).updateData(data) { [weak self] error in
+            if let error = error {
+                // Doküman yoksa, yeni oluştur
+                if (error as NSError).domain == "FIRFirestoreErrorDomain" && (error as NSError).code == 5 {
+                    let userData: [String: Any] = [
+                        "id": userId,
+                        "isOnline": isOnline,
+                        "lastSeen": Timestamp(date: Date()),
+                        "name": UserDefaults.standard.string(forKey: "userName") ?? "Anonim",
+                        "avatar": UserDefaults.standard.string(forKey: "userAvatar") ?? "leo"
+                    ]
+                    
+                    self?.db.collection("users").document(userId).setData(userData) { error in
+                        if let error = error {
+                            self?.showErrorAlert(error)
+                        }
+                    }
+                } else {
+                    self?.showErrorAlert(error)
+                }
+            }
+        }
     }
     
     private func observeOnlineUsers() {
+        loadingIndicator.startAnimating() // Yükleme göstergesini başlat
+        
         db.collection("users")
             .whereField("isOnline", isEqualTo: true)
             .addSnapshotListener { [weak self] snapshot, error in
+                self?.loadingIndicator.stopAnimating() // Yükleme göstergesini durdur
+                
                 if let error = error {
                     self?.showErrorAlert(error)
                     return
                 }
                 
-                guard let documents = snapshot?.documents else { return }
+                guard let documents = snapshot?.documents else {
+                    self?.showErrorAlert(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Kullanıcı verileri alınamadı"]))
+                    return
+                }
+                
+                // Debug için log
+                print("Bulunan online kullanıcı sayısı: \(documents.count)")
                 
                 // Online kullanıcıları güncelle
                 self?.onlineUsers = documents.compactMap { document -> [String: Any]? in
                     var userData = document.data()
                     userData["id"] = document.documentID
+                    
+                    // Debug için log
+                    print("Kullanıcı verisi: \(userData)")
                     
                     // Kendimizi listeden çıkar
                     if document.documentID == self?.currentUserId {
@@ -199,7 +263,7 @@ class OnlineBattleViewController: UIViewController {
                         self?.createBattleButton.isEnabled = false
                         self?.createBattleButton.alpha = 0.5
                     } else {
-                        self?.statusLabel.text = "Çevrimiçi Oyuncular"
+                        self?.statusLabel.text = "Çevrimiçi Oyuncular (\(self?.onlineUsers.count ?? 0))"
                         self?.createBattleButton.isEnabled = true
                         self?.createBattleButton.alpha = 1.0
                     }

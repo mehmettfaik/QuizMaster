@@ -9,6 +9,7 @@ class FriendProfileViewController: UIViewController {
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.showsVerticalScrollIndicator = false
         return scrollView
     }()
     
@@ -18,48 +19,87 @@ class FriendProfileViewController: UIViewController {
         return view
     }()
     
+    private let headerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .primaryPurple.withAlphaComponent(0.1)
+        view.layer.cornerRadius = 30
+        return view
+    }()
+    
     private let profileImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         imageView.clipsToBounds = true
         imageView.backgroundColor = .clear
-        imageView.layer.cornerRadius = 60
+        imageView.layer.cornerRadius = 50
         imageView.layer.masksToBounds = true
-        imageView.layer.borderWidth = 2
+        imageView.layer.borderWidth = 3
+        imageView.layer.borderColor = UIColor.white.cgColor
         imageView.translatesAutoresizingMaskIntoConstraints = false
+        // Add shadow to container
+        imageView.layer.shadowColor = UIColor.black.cgColor
+        imageView.layer.shadowOffset = CGSize(width: 0, height: 4)
+        imageView.layer.shadowRadius = 8
+        imageView.layer.shadowOpacity = 0.1
         return imageView
     }()
     
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 24, weight: .bold)
-        label.textColor = .black
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    private let rankView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .primaryPurple.withAlphaComponent(0.1)
-        view.layer.cornerRadius = 12
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-    
-    private let rankLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        label.font = .systemFont(ofSize: 28, weight: .bold)
         label.textColor = .primaryPurple
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
+    private let statsStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.distribution = .equalSpacing
+        stackView.spacing = 20
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        return stackView
+    }()
+    
+    private let rankView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 15
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOffset = CGSize(width: 0, height: 2)
+        view.layer.shadowRadius = 6
+        view.layer.shadowOpacity = 0.1
+        return view
+    }()
+    
+    private let rankLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 18, weight: .bold)
+        label.textColor = .primaryPurple
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let pointsView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 15
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOffset = CGSize(width: 0, height: 2)
+        view.layer.shadowRadius = 6
+        view.layer.shadowOpacity = 0.1
+        return view
+    }()
+    
     private let pointsLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 16)
-        label.textColor = .gray
+        label.font = .systemFont(ofSize: 18, weight: .bold)
+        label.textColor = .primaryPurple
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -69,7 +109,7 @@ class FriendProfileViewController: UIViewController {
         let label = UILabel()
         label.text = "Rozetler"
         label.font = .systemFont(ofSize: 20, weight: .bold)
-        label.textColor = .black
+        label.textColor = .primaryPurple
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -77,10 +117,12 @@ class FriendProfileViewController: UIViewController {
     private let achievementsCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
-        layout.minimumLineSpacing = 16
-        layout.minimumInteritemSpacing = 16
+        layout.minimumLineSpacing = 20
+        layout.minimumInteritemSpacing = 20
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .clear
+        collectionView.showsVerticalScrollIndicator = false
+        collectionView.isScrollEnabled = false
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         return collectionView
     }()
@@ -105,7 +147,9 @@ class FriendProfileViewController: UIViewController {
         view.backgroundColor = .white
         title = "Profil"
         navigationItem.leftBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "chevron.left"),
+            image: UIImage(systemName: "chevron.left")?.withConfiguration(
+                UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+            ),
             style: .plain,
             target: self,
             action: #selector(backTapped)
@@ -115,11 +159,17 @@ class FriendProfileViewController: UIViewController {
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
         
-        contentView.addSubview(profileImageView)
-        contentView.addSubview(nameLabel)
-        contentView.addSubview(rankView)
+        contentView.addSubview(headerView)
+        headerView.addSubview(profileImageView)
+        headerView.addSubview(nameLabel)
+        headerView.addSubview(statsStackView)
+        
+        statsStackView.addArrangedSubview(rankView)
         rankView.addSubview(rankLabel)
-        contentView.addSubview(pointsLabel)
+        
+        statsStackView.addArrangedSubview(pointsView)
+        pointsView.addSubview(pointsLabel)
+        
         contentView.addSubview(achievementsLabel)
         contentView.addSubview(achievementsCollectionView)
         
@@ -135,33 +185,42 @@ class FriendProfileViewController: UIViewController {
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             
-            profileImageView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            profileImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            profileImageView.widthAnchor.constraint(equalToConstant: 120),
-            profileImageView.heightAnchor.constraint(equalToConstant: 120),
+            headerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            headerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            headerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            
+            profileImageView.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            profileImageView.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 30),
+            profileImageView.widthAnchor.constraint(equalToConstant: 100),
+            profileImageView.heightAnchor.constraint(equalToConstant: 100),
             
             nameLabel.topAnchor.constraint(equalTo: profileImageView.bottomAnchor, constant: 16),
-            nameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            nameLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            nameLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
+            nameLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
             
-            rankView.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 16),
-            rankView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            rankView.widthAnchor.constraint(equalToConstant: 120),
-            rankView.heightAnchor.constraint(equalToConstant: 40),
+            statsStackView.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 20),
+            statsStackView.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            statsStackView.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -30),
+            
+            rankView.widthAnchor.constraint(equalToConstant: 130),
+            rankView.heightAnchor.constraint(equalToConstant: 50),
             
             rankLabel.centerXAnchor.constraint(equalTo: rankView.centerXAnchor),
             rankLabel.centerYAnchor.constraint(equalTo: rankView.centerYAnchor),
             
-            pointsLabel.topAnchor.constraint(equalTo: rankView.bottomAnchor, constant: 8),
-            pointsLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            pointsView.widthAnchor.constraint(equalToConstant: 130),
+            pointsView.heightAnchor.constraint(equalToConstant: 50),
             
-            achievementsLabel.topAnchor.constraint(equalTo: pointsLabel.bottomAnchor, constant: 32),
+            pointsLabel.centerXAnchor.constraint(equalTo: pointsView.centerXAnchor),
+            pointsLabel.centerYAnchor.constraint(equalTo: pointsView.centerYAnchor),
+            
+            achievementsLabel.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 30),
             achievementsLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             
-            achievementsCollectionView.topAnchor.constraint(equalTo: achievementsLabel.bottomAnchor, constant: 16),
+            achievementsCollectionView.topAnchor.constraint(equalTo: achievementsLabel.bottomAnchor, constant: 20),
             achievementsCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             achievementsCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            achievementsCollectionView.heightAnchor.constraint(equalToConstant: 400),
+            achievementsCollectionView.heightAnchor.constraint(equalToConstant: 600),
             achievementsCollectionView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
         ])
     }
@@ -227,7 +286,7 @@ class FriendProfileViewController: UIViewController {
                 
                 if let rank = documents.firstIndex(where: { $0.documentID == self?.userId }) {
                     DispatchQueue.main.async {
-                    self?.rankLabel.text = "Rank #\(rank + 1)"
+                    self?.rankLabel.text = "Rank 🏆\(rank + 1)"
                     }
                 }
             }
@@ -238,7 +297,7 @@ class FriendProfileViewController: UIViewController {
             // Quiz Completion Badges
             AchievementBadge(
                 id: "quiz_5",
-                title: "Quiz Çaylağı",
+                title: "Çaylak",
                 description: "5 quiz tamamla",
                 icon: "star.fill",
                 isUnlocked: quizzesPlayed >= 5,
@@ -249,7 +308,7 @@ class FriendProfileViewController: UIViewController {
             
             AchievementBadge(
                 id: "quiz_10",
-                title: "Quiz Avcısı",
+                title: "Uzman",
                 description: "10 quiz tamamla",
                 icon: "star.circle.fill",
                 isUnlocked: quizzesPlayed >= 10,
@@ -260,7 +319,7 @@ class FriendProfileViewController: UIViewController {
             
             AchievementBadge(
                 id: "quiz_20",
-                title: "Quiz Ustası",
+                title: "Efsane",
                 description: "20 quiz tamamla",
                 icon: "star.square.fill",
                 isUnlocked: quizzesPlayed >= 20,
@@ -272,7 +331,7 @@ class FriendProfileViewController: UIViewController {
             // Points Badges
             AchievementBadge(
                 id: "points_100",
-                title: "Puan Avcısı",
+                title: "Quiz Sever",
                 description: "100 puan topla",
                 icon: "crown",
                 isUnlocked: totalPoints >= 100,
@@ -283,7 +342,7 @@ class FriendProfileViewController: UIViewController {
             
             AchievementBadge(
                 id: "points_500",
-                title: "Puan Ustası",
+                title: "Quiz Ustası",
                 description: "500 puan topla",
                 icon: "crown.fill",
                 isUnlocked: totalPoints >= 500,
@@ -295,7 +354,7 @@ class FriendProfileViewController: UIViewController {
             // Win Badges
             AchievementBadge(
                 id: "wins_5",
-                title: "Kazanan",
+                title: "Elit",
                 description: "5 quiz kazan",
                 icon: "trophy",
                 isUnlocked: quizzesWon >= 5,
@@ -304,16 +363,6 @@ class FriendProfileViewController: UIViewController {
                 currentValue: quizzesWon
             ),
             
-            AchievementBadge(
-                id: "wins_10",
-                title: "Şampiyon",
-                description: "10 quiz kazan",
-                icon: "trophy.fill",
-                isUnlocked: quizzesWon >= 10,
-                progress: min(Double(quizzesWon) / 10.0, 1.0),
-                requirement: 10,
-                currentValue: quizzesWon
-            )
         ]
         
         self.achievements = badges
@@ -342,8 +391,10 @@ extension FriendProfileViewController: UICollectionViewDelegate, UICollectionVie
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = (collectionView.bounds.width - 16) / 2
-        return CGSize(width: width, height: 120)
+        let spacing: CGFloat = 20
+        let availableWidth = collectionView.bounds.width - spacing
+        let width = availableWidth / 2
+        return CGSize(width: width, height: 180)
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {

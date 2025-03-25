@@ -170,21 +170,6 @@ class ProfileViewController: UIViewController {
         return indicator
     }()
     
-    private let signOutButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Çıkış Yap", for: .normal)
-        button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = .systemRed
-        button.layer.cornerRadius = 20
-        button.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
-        button.layer.shadowColor = UIColor.systemRed.cgColor
-        button.layer.shadowOffset = CGSize(width: 0, height: 4)
-        button.layer.shadowOpacity = 0.3
-        button.layer.shadowRadius = 8
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
-    
     private let settingsButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "gearshape.fill"), for: .normal)
@@ -248,7 +233,6 @@ class ProfileViewController: UIViewController {
         contentView.addSubview(friendsButton)
         contentView.addSubview(achievementsLabel)
         contentView.addSubview(achievementsCollectionView)
-        contentView.addSubview(signOutButton)
         contentView.addSubview(loadingIndicator)
         
         NSLayoutConstraint.activate([
@@ -288,12 +272,7 @@ class ProfileViewController: UIViewController {
             achievementsCollectionView.topAnchor.constraint(equalTo: achievementsLabel.bottomAnchor, constant: 24),
             achievementsCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             achievementsCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            
-            signOutButton.topAnchor.constraint(equalTo: achievementsCollectionView.bottomAnchor, constant: 40),
-            signOutButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 30),
-            signOutButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -30),
-            signOutButton.heightAnchor.constraint(equalToConstant: 60),
-            signOutButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40),
+            achievementsCollectionView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40),
             
             loadingIndicator.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             loadingIndicator.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
@@ -303,9 +282,6 @@ class ProfileViewController: UIViewController {
         profileImageView.image = UIImage(systemName: "person.circle.fill")
         profileImageView.tintColor = .primaryPurple
         profileImageView.backgroundColor = .systemGray6
-        
-        // Sign Out action
-        signOutButton.addTarget(self, action: #selector(signOutTapped), for: .touchUpInside)
         
         // Add action to friends button
         friendsButton.addTarget(self, action: #selector(friendsButtonTapped), for: .touchUpInside)
@@ -380,24 +356,6 @@ class ProfileViewController: UIViewController {
         let settingsBarButton = UIBarButtonItem(customView: settingsButton)
         navigationItem.rightBarButtonItem = settingsBarButton
         settingsButton.addTarget(self, action: #selector(settingsTapped), for: .touchUpInside)
-    }
-    
-    @objc private func signOutTapped() {
-        let alert = UIAlertController(
-            title: "Çıkış Yap",
-            message: "Çıkış yapmak istediğinize emin misiniz?",
-            preferredStyle: .alert
-        )
-        
-        alert.addAction(UIAlertAction(title: "İptal", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Çıkış Yap", style: .destructive) { [weak self] _ in
-            self?.viewModel.signOut()
-            let loginVC = LoginViewController()
-            loginVC.modalPresentationStyle = .fullScreen
-            self?.present(loginVC, animated: true)
-        })
-        
-        present(alert, animated: true)
     }
     
     @objc private func settingsTapped() {
@@ -479,7 +437,7 @@ extension ProfileViewController: UICollectionViewDataSource, UICollectionViewDel
         // Collection view'ın yüksekliğini içeriğine göre ayarla
         let numberOfItems = viewModel.achievements.isEmpty ? 1 : viewModel.achievements.count
         let numberOfRows = ceil(Double(numberOfItems) / 2.0)
-        let itemHeight: CGFloat = 200
+        let itemHeight: CGFloat = 185
         let spacing: CGFloat = 16
         let totalHeight = (itemHeight * CGFloat(numberOfRows)) + (spacing * CGFloat(numberOfRows - 1))
         
@@ -674,6 +632,21 @@ class SettingsViewController: UIViewController {
         return table
     }()
     
+    private let signOutButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Çıkış Yap", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .systemRed
+        button.layer.cornerRadius = 20
+        button.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+        button.layer.shadowColor = UIColor.systemRed.cgColor
+        button.layer.shadowOffset = CGSize(width: 0, height: 4)
+        button.layer.shadowOpacity = 0.3
+        button.layer.shadowRadius = 8
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
     private enum Section: Int, CaseIterable {
         case profile
         case appearance
@@ -738,16 +711,43 @@ class SettingsViewController: UIViewController {
         )
         
         view.addSubview(tableView)
+        view.addSubview(signOutButton)
+        
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: signOutButton.topAnchor, constant: -20),
+            
+            signOutButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 30),
+            signOutButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -30),
+            signOutButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            signOutButton.heightAnchor.constraint(equalToConstant: 60)
         ])
         
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "SettingsCell")
+        
+        signOutButton.addTarget(self, action: #selector(signOutTapped), for: .touchUpInside)
+    }
+    
+    @objc private func signOutTapped() {
+        let alert = UIAlertController(
+            title: "Çıkış Yap",
+            message: "Çıkış yapmak istediğinize emin misiniz?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "İptal", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Çıkış Yap", style: .destructive) { [weak self] _ in
+            self?.viewModel.signOut()
+            let loginVC = LoginViewController()
+            loginVC.modalPresentationStyle = .fullScreen
+            self?.present(loginVC, animated: true)
+        })
+        
+        present(alert, animated: true)
     }
     
     @objc private func closeTapped() {

@@ -1,10 +1,13 @@
 import UIKit
 import FirebaseFirestore
+import QuizMaster
 
 class FriendProfileViewController: UIViewController {
     private let userId: String
     private let db = Firestore.firestore()
     private var user: QuizMaster.User?
+    private var viewModel: UserViewModel!
+    private var achievements: [AchievementBadge] = []
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -107,8 +110,8 @@ class FriendProfileViewController: UIViewController {
     
     private let achievementsLabel: UILabel = {
         let label = UILabel()
-        label.text = "Rozetler"
-        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.text = "Başarı Rozetleri"
+        label.font = .systemFont(ofSize: 28, weight: .bold)
         label.textColor = .primaryPurple
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -117,11 +120,10 @@ class FriendProfileViewController: UIViewController {
     private let achievementsCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
-        layout.minimumLineSpacing = 20
-        layout.minimumInteritemSpacing = 20
+        layout.minimumLineSpacing = 16
+        layout.minimumInteritemSpacing = 16
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .clear
-        collectionView.showsVerticalScrollIndicator = false
         collectionView.isScrollEnabled = false
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         return collectionView
@@ -130,6 +132,7 @@ class FriendProfileViewController: UIViewController {
     init(userId: String) {
         self.userId = userId
         super.init(nibName: nil, bundle: nil)
+        self.viewModel = UserViewModel()
     }
     
     required init?(coder: NSCoder) {
@@ -361,20 +364,21 @@ class FriendProfileViewController: UIViewController {
                 progress: min(Double(quizzesWon) / 5.0, 1.0),
                 requirement: 5,
                 currentValue: quizzesWon
-            ),
-            
+            )
         ]
         
         self.achievements = badges
         self.achievementsCollectionView.reloadData()
     }
-    
-    private var achievements: [AchievementBadge] = []
 }
 
-extension FriendProfileViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+// MARK: - UICollectionView DataSource & Delegate
+extension FriendProfileViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return achievements.isEmpty ? 1 : achievements.count
+        if achievements.isEmpty {
+            return 1
+        }
+        return achievements.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -391,9 +395,7 @@ extension FriendProfileViewController: UICollectionViewDelegate, UICollectionVie
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let spacing: CGFloat = 20
-        let availableWidth = collectionView.bounds.width - spacing
-        let width = availableWidth / 2
+        let width = (collectionView.bounds.width - 32) / 2
         return CGSize(width: width, height: 180)
     }
     
@@ -408,5 +410,38 @@ extension FriendProfileViewController: UICollectionViewDelegate, UICollectionVie
         )
         alert.addAction(UIAlertAction(title: "Tamam", style: .default))
         present(alert, animated: true)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacing: CGFloat) -> CGFloat {
+        return 16
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacing: CGFloat) -> CGFloat {
+        return 16
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        return .zero
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        
+        // Collection view'ın yüksekliğini içeriğine göre ayarla
+        let numberOfItems = achievements.isEmpty ? 1 : achievements.count
+        let numberOfRows = ceil(Double(numberOfItems) / 2.0)
+        let itemHeight: CGFloat = 185
+        let spacing: CGFloat = 16
+        let totalHeight = (itemHeight * CGFloat(numberOfRows)) + (spacing * CGFloat(numberOfRows - 1))
+        
+        // Mevcut height constraint'i kaldır
+        achievementsCollectionView.constraints.forEach { constraint in
+            if constraint.firstAttribute == .height {
+                achievementsCollectionView.removeConstraint(constraint)
+            }
+        }
+        
+        // Yeni height constraint ekle
+        achievementsCollectionView.heightAnchor.constraint(equalToConstant: totalHeight).isActive = true
     }
 } 

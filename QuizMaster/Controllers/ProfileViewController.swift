@@ -153,10 +153,11 @@ class ProfileViewController: UIViewController {
     private let achievementsCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
-        layout.minimumLineSpacing = 20
-        layout.minimumInteritemSpacing = 20
+        layout.minimumLineSpacing = 16
+        layout.minimumInteritemSpacing = 16
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .clear
+        collectionView.isScrollEnabled = false
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         return collectionView
     }()
@@ -231,11 +232,10 @@ class ProfileViewController: UIViewController {
         // Gradient background for the top section
         let gradientLayer = CAGradientLayer()
         gradientLayer.colors = [
-            UIColor.primaryPurple.withAlphaComponent(0.5).cgColor, // Daha koyu başlangıç
-            //UIColor.primaryPurple.withAlphaComponent(0.15).cgColor,
+            UIColor.primaryPurple.withAlphaComponent(0.5).cgColor,
             UIColor.systemBackground.cgColor
         ]
-        gradientLayer.locations = [0.0, 1.0] // Üç noktalı geçiş
+        gradientLayer.locations = [0.0, 1.0]
         gradientLayer.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: 300)
         view.layer.insertSublayer(gradientLayer, at: 0)
         
@@ -288,7 +288,6 @@ class ProfileViewController: UIViewController {
             achievementsCollectionView.topAnchor.constraint(equalTo: achievementsLabel.bottomAnchor, constant: 24),
             achievementsCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             achievementsCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            achievementsCollectionView.heightAnchor.constraint(equalToConstant: 500),
             
             signOutButton.topAnchor.constraint(equalTo: achievementsCollectionView.bottomAnchor, constant: 40),
             signOutButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 30),
@@ -427,7 +426,7 @@ class ProfileViewController: UIViewController {
 extension ProfileViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if viewModel.achievements.isEmpty {
-            return 1 // Eğer rozet yoksa bir hücre göster
+            return 1
         }
         return viewModel.achievements.count
     }
@@ -436,7 +435,6 @@ extension ProfileViewController: UICollectionViewDataSource, UICollectionViewDel
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "AchievementCell", for: indexPath) as! AchievementCell
         
         if viewModel.achievements.isEmpty {
-            // Eğer rozet yoksa bilgilendirme mesajı göster
             cell.configureAsPlaceholder()
         } else {
             let achievement = viewModel.achievements[indexPath.item]
@@ -447,8 +445,8 @@ extension ProfileViewController: UICollectionViewDataSource, UICollectionViewDel
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = (collectionView.bounds.width - 20) / 2
-        return CGSize(width: width, height: 120)
+        let width = (collectionView.bounds.width - 32) / 2
+        return CGSize(width: width, height: 180)
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -462,6 +460,39 @@ extension ProfileViewController: UICollectionViewDataSource, UICollectionViewDel
         alert.addAction(UIAlertAction(title: "Tamam", style: .default))
         present(alert, animated: true)
     }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacing: CGFloat) -> CGFloat {
+        return 16
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacing: CGFloat) -> CGFloat {
+        return 16
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        return .zero
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        
+        // Collection view'ın yüksekliğini içeriğine göre ayarla
+        let numberOfItems = viewModel.achievements.isEmpty ? 1 : viewModel.achievements.count
+        let numberOfRows = ceil(Double(numberOfItems) / 2.0)
+        let itemHeight: CGFloat = 200
+        let spacing: CGFloat = 16
+        let totalHeight = (itemHeight * CGFloat(numberOfRows)) + (spacing * CGFloat(numberOfRows - 1))
+        
+        // Mevcut height constraint'i kaldır
+        achievementsCollectionView.constraints.forEach { constraint in
+            if constraint.firstAttribute == .height {
+                achievementsCollectionView.removeConstraint(constraint)
+            }
+        }
+        
+        // Yeni height constraint ekle
+        achievementsCollectionView.heightAnchor.constraint(equalToConstant: totalHeight).isActive = true
+    }
 }
 
 // MARK: - Achievement Cell
@@ -469,11 +500,19 @@ class AchievementCell: UICollectionViewCell {
     private let containerView: UIView = {
         let view = UIView()
         view.backgroundColor = .systemBackground
-        view.layer.cornerRadius = 20
+        view.layer.cornerRadius = 24
         view.layer.shadowColor = UIColor.black.cgColor
         view.layer.shadowOffset = CGSize(width: 0, height: 4)
-        view.layer.shadowOpacity = 0.15
-        view.layer.shadowRadius = 8
+        view.layer.shadowOpacity = 0.1
+        view.layer.shadowRadius = 12
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private let iconContainerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .primaryPurple.withAlphaComponent(0.1)
+        view.layer.cornerRadius = 20
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -487,7 +526,7 @@ class AchievementCell: UICollectionViewCell {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.font = .systemFont(ofSize: 18, weight: .bold)
         label.textColor = .primaryPurple
         label.textAlignment = .center
         label.numberOfLines = 0
@@ -497,19 +536,27 @@ class AchievementCell: UICollectionViewCell {
     
     private let descriptionLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 14, weight: .medium) // Medium weight eklendi
-        label.textColor = .black // Rengi siyah yapıldı
+        label.font = .systemFont(ofSize: 14)
+        label.textColor = .secondaryLabel
         label.textAlignment = .center
         label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
+    private let progressContainerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .systemGray6
+        view.layer.cornerRadius = 8
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     private let progressView: UIProgressView = {
         let progress = UIProgressView(progressViewStyle: .default)
-        progress.trackTintColor = .systemGray5
+        progress.trackTintColor = .clear
         progress.progressTintColor = .primaryPurple
-        progress.layer.cornerRadius = 6
+        progress.layer.cornerRadius = 8
         progress.clipsToBounds = true
         progress.translatesAutoresizingMaskIntoConstraints = false
         return progress
@@ -535,10 +582,12 @@ class AchievementCell: UICollectionViewCell {
     
     private func setupUI() {
         contentView.addSubview(containerView)
-        containerView.addSubview(iconImageView)
+        containerView.addSubview(iconContainerView)
+        iconContainerView.addSubview(iconImageView)
         containerView.addSubview(titleLabel)
         containerView.addSubview(descriptionLabel)
-        containerView.addSubview(progressView)
+        containerView.addSubview(progressContainerView)
+        progressContainerView.addSubview(progressView)
         containerView.addSubview(progressLabel)
         
         NSLayoutConstraint.activate([
@@ -547,25 +596,35 @@ class AchievementCell: UICollectionViewCell {
             containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             
-            iconImageView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-            iconImageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: 40),
-            iconImageView.heightAnchor.constraint(equalToConstant: 40),
+            iconContainerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
+            iconContainerView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            iconContainerView.widthAnchor.constraint(equalToConstant: 48),
+            iconContainerView.heightAnchor.constraint(equalToConstant: 48),
             
-            titleLabel.topAnchor.constraint(equalTo: iconImageView.bottomAnchor, constant: 8),
-            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -8),
+            iconImageView.centerXAnchor.constraint(equalTo: iconContainerView.centerXAnchor),
+            iconImageView.centerYAnchor.constraint(equalTo: iconContainerView.centerYAnchor),
+            iconImageView.widthAnchor.constraint(equalToConstant: 24),
+            iconImageView.heightAnchor.constraint(equalToConstant: 24),
+            
+            titleLabel.topAnchor.constraint(equalTo: iconContainerView.bottomAnchor, constant: 12),
+            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
             
             descriptionLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            descriptionLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
-            descriptionLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -8),
+            descriptionLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            descriptionLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
             
-            progressView.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 8),
-            progressView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            progressView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            progressView.heightAnchor.constraint(equalToConstant: 6),
+            progressContainerView.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 12),
+            progressContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            progressContainerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            progressContainerView.heightAnchor.constraint(equalToConstant: 8),
             
-            progressLabel.topAnchor.constraint(equalTo: progressView.bottomAnchor, constant: 4),
+            progressView.topAnchor.constraint(equalTo: progressContainerView.topAnchor),
+            progressView.leadingAnchor.constraint(equalTo: progressContainerView.leadingAnchor),
+            progressView.trailingAnchor.constraint(equalTo: progressContainerView.trailingAnchor),
+            progressView.bottomAnchor.constraint(equalTo: progressContainerView.bottomAnchor),
+            
+            progressLabel.topAnchor.constraint(equalTo: progressContainerView.bottomAnchor, constant: 4),
             progressLabel.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
             progressLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12)
         ])
@@ -581,6 +640,7 @@ class AchievementCell: UICollectionViewCell {
         
         // Kilitsiz/kilitli duruma göre opacity ayarla
         containerView.alpha = achievement.isUnlocked ? 1.0 : 0.7
+        iconContainerView.backgroundColor = achievement.isUnlocked ? .primaryPurple.withAlphaComponent(0.1) : .systemGray5
     }
     
     func configureAsPlaceholder() {
@@ -591,6 +651,7 @@ class AchievementCell: UICollectionViewCell {
         progressView.isHidden = true
         progressLabel.isHidden = true
         containerView.alpha = 0.7
+        iconContainerView.backgroundColor = .systemGray5
     }
 }
 

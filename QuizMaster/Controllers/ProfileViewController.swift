@@ -181,6 +181,16 @@ class ProfileViewController: UIViewController {
         return button
     }()
     
+    private let onlineButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "bolt.circle.fill"), for: .normal)
+        button.tintColor = .primaryPurple
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(equalToConstant: 44).isActive = true
+        button.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        return button
+    }()
+    
     private let friendsButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Arkadaşlarım", for: .normal)
@@ -355,14 +365,25 @@ class ProfileViewController: UIViewController {
     
     private func setupNavigationBar() {
         let settingsBarButton = UIBarButtonItem(customView: settingsButton)
+        let onlineBarButton = UIBarButtonItem(customView: onlineButton)
         navigationItem.rightBarButtonItem = settingsBarButton
+        navigationItem.leftBarButtonItem = onlineBarButton
+        
         settingsButton.addTarget(self, action: #selector(settingsTapped), for: .touchUpInside)
+        onlineButton.addTarget(self, action: #selector(onlineBattleTapped), for: .touchUpInside)
     }
     
     @objc private func settingsTapped() {
         let settingsVC = SettingsViewController(viewModel: viewModel)
         let navController = UINavigationController(rootViewController: settingsVC)
         present(navController, animated: true)
+    }
+    
+    @objc private func onlineBattleTapped() {
+        let onlineBattleVC = OnlineBattleViewController()
+        let nav = UINavigationController(rootViewController: onlineBattleVC)
+        nav.modalPresentationStyle = .fullScreen
+        present(nav, animated: true)
     }
     
     @objc private func friendsButtonTapped() {

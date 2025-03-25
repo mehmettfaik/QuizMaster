@@ -9,6 +9,7 @@ class OnlineBattleViewController: UIViewController {
     private var currentBattleId: String?
     private var timer: Timer?
     private var remainingTime: Int = 30
+    private var onlineUsers: [[String: Any]] = []
     
     // MARK: - UI Components
     private let containerStackView: UIStackView = {
@@ -82,6 +83,12 @@ class OnlineBattleViewController: UIViewController {
         if let battleId = currentBattleId {
             leaveBattle(battleId: battleId)
         }
+        updateUserOnlineStatus(isOnline: false)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateUserOnlineStatus(isOnline: true)
     }
     
     // MARK: - Setup
@@ -157,10 +164,47 @@ class OnlineBattleViewController: UIViewController {
         db.collection("users")
             .whereField("isOnline", isEqualTo: true)
             .addSnapshotListener { [weak self] snapshot, error in
+                if let error = error {
+                    self?.showErrorAlert(error)
+                    return
+                }
+                
                 guard let documents = snapshot?.documents else { return }
                 
                 // Online kullanıcıları güncelle
-                self?.onlineUsersCollectionView.reloadData()
+                self?.onlineUsers = documents.compactMap { document -> [String: Any]? in
+                    var userData = document.data()
+                    userData["id"] = document.documentID
+                    
+                    // Kendimizi listeden çıkar
+                    if document.documentID == self?.currentUserId {
+                        return nil
+                    }
+                    
+                    // Son görülme zamanını kontrol et
+                    if let lastSeen = userData["lastSeen"] as? Timestamp {
+                        let timeDifference = Date().timeIntervalSince(lastSeen.dateValue())
+                        // 5 dakikadan fazla süre geçtiyse offline kabul et
+                        if timeDifference > 300 {
+                            return nil
+                        }
+                    }
+                    
+                    return userData
+                }
+                
+                DispatchQueue.main.async {
+                    if self?.onlineUsers.isEmpty == true {
+                        self?.statusLabel.text = "Şu anda çevrimiçi oyuncu yok"
+                        self?.createBattleButton.isEnabled = false
+                        self?.createBattleButton.alpha = 0.5
+                    } else {
+                        self?.statusLabel.text = "Çevrimiçi Oyuncular"
+                        self?.createBattleButton.isEnabled = true
+                        self?.createBattleButton.alpha = 1.0
+                    }
+                    self?.onlineUsersCollectionView.reloadData()
+                }
             }
     }
     
@@ -252,13 +296,48 @@ class OnlineBattleViewController: UIViewController {
 // MARK: - UICollectionView DataSource & Delegate
 extension OnlineBattleViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 10 // Örnek sayı, gerçek veriye göre güncellenecek
+        return onlineUsers.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "OnlineUserCell", for: indexPath) as! OnlineUserCell
-        // Cell'i configure et
+        let user = onlineUsers[indexPath.item]
+        cell.configure(with: user)
         return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let selectedUser = onlineUsers[indexPath.item]
+        guard let userId = selectedUser["id"] as? String else { return }
+        
+        // Seçilen kullanıcıya yarışma daveti gönder
+        sendBattleInvitation(to: userId)
+    }
+    
+    private func sendBattleInvitation(to userId: String) {
+        guard let currentUserId = self.currentUserId else { return }
+        
+        let battleData: [String: Any] = [
+            "createdBy": currentUserId,
+            "invitedPlayer": userId,
+            "status": "invitation",
+            "createdAt": Timestamp(date: Date())
+        ]
+        
+        db.collection("battleInvitations").addDocument(data: battleData) { [weak self] error in
+            if let error = error {
+                self?.showErrorAlert(error)
+            } else {
+                // Davet gönderildi bildirimi göster
+                let alert = UIAlertController(
+                    title: "Davet Gönderildi",
+                    message: "Oyuncunun daveti kabul etmesi bekleniyor...",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+                self?.present(alert, animated: true)
+            }
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {

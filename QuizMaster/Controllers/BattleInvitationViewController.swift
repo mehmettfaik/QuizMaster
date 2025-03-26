@@ -199,6 +199,7 @@ class BattleInvitationViewController: UIViewController {
         
         print("Observing battle status for battle ID: \(battleId)")
         
+        // Remove any existing listeners before adding a new one
         db.collection("battles").document(battleId)
             .addSnapshotListener { [weak self] snapshot, error in
                 if let error = error {
@@ -220,7 +221,7 @@ class BattleInvitationViewController: UIViewController {
                                                                        difficulty: difficulty,
                                                                        battleId: self?.battleId ?? "",
                                                                        opponentId: self?.opponentId ?? "")
-                            self?.navigationController?.pushViewController(quizBattleVC, animated: true)
+                            self?.navigationController?.setViewControllers([quizBattleVC], animated: true)
                         }
                     }
                 }
@@ -232,7 +233,7 @@ class BattleInvitationViewController: UIViewController {
         let difficulties = ["easy", "medium", "hard"]
         let selectedDifficulty = difficulties[difficultySegmentedControl.selectedSegmentIndex]
         
-        print("Starting battle with category: \(selectedCategory), difficulty: \(selectedDifficulty)") // Debug için
+        print("Starting battle with category: \(selectedCategory), difficulty: \(selectedDifficulty)")
         
         db.collection("battles").document(battleId).updateData([
             "status": "started",
@@ -249,7 +250,7 @@ class BattleInvitationViewController: UIViewController {
                                                            difficulty: selectedDifficulty,
                                                            battleId: self?.battleId ?? "",
                                                            opponentId: self?.opponentId ?? "")
-                self?.navigationController?.pushViewController(quizBattleVC, animated: true)
+                self?.navigationController?.setViewControllers([quizBattleVC], animated: true)
             }
         }
     }

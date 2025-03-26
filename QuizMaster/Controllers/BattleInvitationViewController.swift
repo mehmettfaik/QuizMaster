@@ -6,8 +6,6 @@ class BattleInvitationViewController: UIViewController {
     private let battleId: String
     private let opponentId: String
     private let isCreator: Bool
-    private var selectedCategory: String?
-    private var selectedDifficulty: String?
     private var categories: [String] = []
     
     // MARK: - UI Components
@@ -16,6 +14,7 @@ class BattleInvitationViewController: UIViewController {
         stack.axis = .vertical
         stack.spacing = 20
         stack.alignment = .fill
+        stack.distribution = .fill
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
@@ -27,6 +26,47 @@ class BattleInvitationViewController: UIViewController {
         label.textColor = .primaryPurple
         label.textAlignment = .center
         return label
+    }()
+    
+    private let categoryLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Kategori Seçin"
+        label.font = .systemFont(ofSize: 18, weight: .medium)
+        label.textAlignment = .left
+        return label
+    }()
+    
+    private let categoryPickerView: UIPickerView = {
+        let picker = UIPickerView()
+        picker.backgroundColor = .systemBackground
+        return picker
+    }()
+    
+    private let difficultyLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Zorluk Seviyesi"
+        label.font = .systemFont(ofSize: 18, weight: .medium)
+        label.textAlignment = .left
+        return label
+    }()
+    
+    private lazy var difficultySegmentedControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["Kolay", "Orta", "Zor"])
+        control.backgroundColor = .systemBackground
+        control.selectedSegmentTintColor = .systemBlue
+        control.selectedSegmentIndex = 0
+        control.isEnabled = isCreator
+        return control
+    }()
+    
+    private lazy var startButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Yarışmayı Başlat", for: .normal)
+        button.backgroundColor = .systemBlue
+        button.setTitleColor(.white, for: .normal)
+        button.layer.cornerRadius = 10
+        button.isEnabled = isCreator
+        return button
     }()
     
     private lazy var waitingLabel: UILabel = {
@@ -48,41 +88,6 @@ class BattleInvitationViewController: UIViewController {
         return view
     }()
     
-    private lazy var categorySegmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl()
-        control.backgroundColor = .systemBackground
-        control.selectedSegmentTintColor = .systemBlue
-        control.isEnabled = isCreator
-        return control
-    }()
-    
-    private lazy var difficultySegmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: ["Kolay", "Orta", "Zor"])
-        control.backgroundColor = .systemBackground
-        control.selectedSegmentTintColor = .systemBlue
-        control.selectedSegmentIndex = 0
-        control.isEnabled = isCreator
-        return control
-    }()
-    
-    private lazy var startButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Yarışmayı Başlat", for: .normal)
-        button.backgroundColor = .systemBlue
-        button.setTitleColor(.white, for: .normal)
-        button.layer.cornerRadius = 10
-        button.isEnabled = isCreator
-        button.addTarget(self, action: #selector(startButtonTapped), for: .touchUpInside)
-        return button
-    }()
-    
-    private let loadingIndicator: UIActivityIndicatorView = {
-        let indicator = UIActivityIndicatorView(style: .large)
-        indicator.color = .primaryPurple
-        indicator.hidesWhenStopped = true
-        return indicator
-    }()
-    
     // MARK: - Initialization
     init(battleId: String, opponentId: String, isCreator: Bool) {
         self.battleId = battleId
@@ -98,21 +103,78 @@ class BattleInvitationViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        fetchCategories()
         setupUI()
+        setupPickerView()
         setupActions()
+        fetchCategories()
         
         if !isCreator {
-            // İsteği kabul eden kullanıcı için blur efekti ve bekleme mesajı
-            blurView.isHidden = false
-            waitingLabel.isHidden = false
-            categorySegmentedControl.isEnabled = false
-            difficultySegmentedControl.isEnabled = false
-            startButton.isEnabled = false
+            observeBattleStatus()
+        }
+    }
+    
+    // MARK: - Setup
+    private func setupUI() {
+        view.backgroundColor = .systemBackground
+        navigationItem.hidesBackButton = true
+        
+        view.addSubview(containerStackView)
+        
+        containerStackView.addArrangedSubview(titleLabel)
+        containerStackView.addArrangedSubview(UIView()) // Spacer
+        containerStackView.addArrangedSubview(categoryLabel)
+        containerStackView.addArrangedSubview(categoryPickerView)
+        containerStackView.addArrangedSubview(UIView()) // Spacer
+        containerStackView.addArrangedSubview(difficultyLabel)
+        containerStackView.addArrangedSubview(difficultySegmentedControl)
+        containerStackView.addArrangedSubview(UIView()) // Spacer
+        containerStackView.addArrangedSubview(startButton)
+        
+        if !isCreator {
+            view.addSubview(blurView)
+            view.addSubview(waitingLabel)
         }
         
-        // Battle durumunu dinle
-        observeBattleStatus()
+        NSLayoutConstraint.activate([
+            containerStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            containerStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            
+            categoryPickerView.heightAnchor.constraint(equalToConstant: 150),
+            startButton.heightAnchor.constraint(equalToConstant: 50)
+        ])
+        
+        if !isCreator {
+            blurView.translatesAutoresizingMaskIntoConstraints = false
+            waitingLabel.translatesAutoresizingMaskIntoConstraints = false
+            
+            NSLayoutConstraint.activate([
+                blurView.topAnchor.constraint(equalTo: view.topAnchor),
+                blurView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                blurView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                blurView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                
+                waitingLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                waitingLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+                waitingLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+                waitingLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40)
+            ])
+        }
+        
+        // UI bileşenlerinin etkinliğini ayarla
+        categoryPickerView.isUserInteractionEnabled = isCreator
+        difficultySegmentedControl.isEnabled = isCreator
+        startButton.isEnabled = isCreator
+    }
+    
+    private func setupPickerView() {
+        categoryPickerView.delegate = self
+        categoryPickerView.dataSource = self
+    }
+    
+    private func setupActions() {
+        startButton.addTarget(self, action: #selector(startButtonTapped), for: .touchUpInside)
     }
     
     private func fetchCategories() {
@@ -121,26 +183,11 @@ class BattleInvitationViewController: UIViewController {
             case .success(let categories):
                 self?.categories = categories
                 DispatchQueue.main.async {
-                    self?.updateCategorySegmentedControl()
+                    self?.categoryPickerView.reloadAllComponents()
                 }
             case .failure(let error):
                 print("Error fetching categories: \(error)")
             }
-        }
-    }
-    
-    private func updateCategorySegmentedControl() {
-        // Mevcut segmentleri temizle
-        categorySegmentedControl.removeAllSegments()
-        
-        // Yeni kategorileri ekle
-        for (index, category) in categories.enumerated() {
-            categorySegmentedControl.insertSegment(withTitle: category, at: index, animated: false)
-        }
-        
-        // İlk kategoriyi seç
-        if categories.count > 0 {
-            categorySegmentedControl.selectedSegmentIndex = 0
         }
     }
     
@@ -166,7 +213,6 @@ class BattleInvitationViewController: UIViewController {
                 }
                 
                 if status == "started" {
-                    // Yarışma başladı, QuizBattleViewController'a geç
                     if let category = data["category"] as? String,
                        let difficulty = data["difficulty"] as? String {
                         DispatchQueue.main.async {
@@ -181,82 +227,13 @@ class BattleInvitationViewController: UIViewController {
             }
     }
     
-    // MARK: - Setup
-    private func setupUI() {
-        view.backgroundColor = .systemBackground
-        
-        view.addSubview(containerStackView)
-        view.addSubview(blurView)
-        view.addSubview(waitingLabel)
-        view.addSubview(loadingIndicator)
-        
-        let categoryLabel = UILabel()
-        categoryLabel.text = "Kategori Seçin"
-        categoryLabel.font = .systemFont(ofSize: 18, weight: .medium)
-        
-        let difficultyLabel = UILabel()
-        difficultyLabel.text = "Zorluk Seviyesi"
-        difficultyLabel.font = .systemFont(ofSize: 18, weight: .medium)
-        
-        containerStackView.addArrangedSubview(titleLabel)
-        containerStackView.addArrangedSubview(UIView()) // Spacer
-        containerStackView.addArrangedSubview(categoryLabel)
-        containerStackView.addArrangedSubview(categorySegmentedControl)
-        containerStackView.addArrangedSubview(UIView()) // Spacer
-        containerStackView.addArrangedSubview(difficultyLabel)
-        containerStackView.addArrangedSubview(difficultySegmentedControl)
-        containerStackView.addArrangedSubview(UIView()) // Spacer
-        containerStackView.addArrangedSubview(startButton)
-        
-        NSLayoutConstraint.activate([
-            containerStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            
-            blurView.topAnchor.constraint(equalTo: view.topAnchor),
-            blurView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            blurView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            blurView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
-            waitingLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            waitingLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            waitingLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            waitingLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
-            
-            startButton.heightAnchor.constraint(equalToConstant: 50),
-            
-            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
-        
-        waitingLabel.translatesAutoresizingMaskIntoConstraints = false
-        loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
-    }
-    
-    private func setupActions() {
-        startButton.addTarget(self, action: #selector(startButtonTapped), for: .touchUpInside)
-        categorySegmentedControl.addTarget(self, action: #selector(categoryChanged), for: .valueChanged)
-        difficultySegmentedControl.addTarget(self, action: #selector(difficultyChanged), for: .valueChanged)
-    }
-    
-    // MARK: - Actions
-    @objc private func categoryChanged(_ sender: UISegmentedControl) {
-        guard sender.selectedSegmentIndex >= 0,
-              sender.selectedSegmentIndex < categories.count else { return }
-        selectedCategory = categories[sender.selectedSegmentIndex]
-    }
-    
-    @objc private func difficultyChanged(_ sender: UISegmentedControl) {
-        let difficulties = ["easy", "medium", "hard"]
-        selectedDifficulty = difficulties[sender.selectedSegmentIndex]
-    }
-    
     @objc private func startButtonTapped() {
-        guard let selectedCategory = categories[safe: categorySegmentedControl.selectedSegmentIndex] else { return }
+        guard let selectedCategory = categories[safe: categoryPickerView.selectedRow(inComponent: 0)] else { return }
         let difficulties = ["easy", "medium", "hard"]
         let selectedDifficulty = difficulties[difficultySegmentedControl.selectedSegmentIndex]
         
-        // Yarışma dokümanını güncelle
+        print("Starting battle with category: \(selectedCategory), difficulty: \(selectedDifficulty)") // Debug için
+        
         db.collection("battles").document(battleId).updateData([
             "status": "started",
             "category": selectedCategory,
@@ -267,7 +244,6 @@ class BattleInvitationViewController: UIViewController {
                 return
             }
             
-            // QuizBattleViewController'a geç
             DispatchQueue.main.async {
                 let quizBattleVC = QuizBattleViewController(category: selectedCategory,
                                                            difficulty: selectedDifficulty,
@@ -276,6 +252,21 @@ class BattleInvitationViewController: UIViewController {
                 self?.navigationController?.pushViewController(quizBattleVC, animated: true)
             }
         }
+    }
+}
+
+// MARK: - UIPickerView DataSource & Delegate
+extension BattleInvitationViewController: UIPickerViewDataSource, UIPickerViewDelegate {
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+        return 1
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        return categories.count
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        return categories[row]
     }
 }
 

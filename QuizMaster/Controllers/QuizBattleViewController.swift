@@ -1,17 +1,21 @@
 import UIKit
 import FirebaseFirestore
 import Combine
+import FirebaseAuth
 
 class QuizBattleViewController: UIViewController {
+    private let category: String
+    private let difficulty: String
     private let battleId: String
+    private let opponentId: String
     private let db = Firestore.firestore()
     private var cancellables = Set<AnyCancellable>()
     private var currentQuestion: [String: Any]?
     private var questions: [[String: Any]] = []
     private var currentQuestionIndex = 0
     private var timer: Timer?
-    private var remainingTime: Int = 15
-    private var userAnswers: [String: Int] = [:]
+    private var timeLeft = 15 // Her soru için 15 saniye
+    private var score = 0
     private var players: [[String: Any]] = []
     
     // MARK: - UI Components
@@ -34,34 +38,43 @@ class QuizBattleViewController: UIViewController {
         return cv
     }()
     
-    private let questionLabel: UILabel = {
+    private lazy var questionLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 20, weight: .bold)
-        label.textColor = .label
+        label.textAlignment = .center
         label.numberOfLines = 0
-        label.textAlignment = .center
+        label.font = .systemFont(ofSize: 18, weight: .medium)
         return label
     }()
     
-    private let timerLabel: UILabel = {
+    private lazy var timerLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 36, weight: .bold)
-        label.textColor = .primaryPurple
         label.textAlignment = .center
+        label.font = .systemFont(ofSize: 24, weight: .bold)
         return label
     }()
     
-    private let answersStackView: UIStackView = {
+    private lazy var scoreLabel: UILabel = {
+        let label = UILabel()
+        label.textAlignment = .center
+        label.font = .systemFont(ofSize: 18)
+        label.text = "Skor: 0"
+        return label
+    }()
+    
+    private lazy var answerStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
-        stack.spacing = 12
+        stack.spacing = 10
         stack.distribution = .fillEqually
         return stack
     }()
     
     // MARK: - Initialization
-    init(battleId: String) {
+    init(category: String, difficulty: String, battleId: String, opponentId: String) {
+        self.category = category
+        self.difficulty = difficulty
         self.battleId = battleId
+        self.opponentId = opponentId
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -74,7 +87,7 @@ class QuizBattleViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupCollectionView()
-        loadQuestions()
+        fetchQuestions()
         observePlayers()
     }
     
@@ -86,14 +99,15 @@ class QuizBattleViewController: UIViewController {
     // MARK: - Setup
     private func setupUI() {
         view.backgroundColor = .systemBackground
-        title = "Canlı Yarışma"
+        title = "Yarışma"
         
         view.addSubview(containerStackView)
         
         containerStackView.addArrangedSubview(playersCollectionView)
         containerStackView.addArrangedSubview(timerLabel)
+        containerStackView.addArrangedSubview(scoreLabel)
         containerStackView.addArrangedSubview(questionLabel)
-        containerStackView.addArrangedSubview(answersStackView)
+        containerStackView.addArrangedSubview(answerStackView)
         
         NSLayoutConstraint.activate([
             containerStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
@@ -112,147 +126,137 @@ class QuizBattleViewController: UIViewController {
     }
     
     // MARK: - Game Logic
-    private func loadQuestions() {
-        // Firestore'dan soruları çek
-        db.collection("questions")
-            .limit(to: 10)
+    private func fetchQuestions() {
+        // Firestore'dan soruları getir
+        db.collection("quizzes")
+            .whereField("category", isEqualTo: category)
+            .whereField("difficulty", isEqualTo: difficulty)
+            .limit(to: 5)
             .getDocuments { [weak self] snapshot, error in
                 if let error = error {
-                    self?.showErrorAlert(error)
+                    print("Error fetching questions: \(error)")
                     return
                 }
                 
                 guard let documents = snapshot?.documents else { return }
+                
                 self?.questions = documents.map { $0.data() }
-                self?.startGame()
+                self?.startQuiz()
             }
     }
     
-    private func startGame() {
-        showNextQuestion()
+    private func startQuiz() {
+        showQuestion(at: currentQuestionIndex)
+        startTimer()
     }
     
-    private func showNextQuestion() {
-        guard currentQuestionIndex < questions.count else {
-            endGame()
+    private func showQuestion(at index: Int) {
+        guard index < questions.count else {
+            endQuiz()
             return
         }
         
-        currentQuestion = questions[currentQuestionIndex]
+        currentQuestion = questions[index]
         updateUI()
-        startTimer()
     }
     
     private func updateUI() {
         guard let question = currentQuestion else { return }
         
-        questionLabel.text = question["text"] as? String
+        questionLabel.text = question["question"] as? String
         
         // Mevcut cevap butonlarını temizle
-        answersStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        answerStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         
-        // Yeni cevap butonlarını ekle
-        if let answers = question["answers"] as? [String] {
-            for (index, answer) in answers.enumerated() {
-                let button = createAnswerButton(answer, index: index)
-                answersStackView.addArrangedSubview(button)
-            }
+        // Cevapları karıştır
+        var answers = [(String, Bool)]()
+        if let correctAnswer = question["correct_answer"] as? String {
+            answers.append((correctAnswer, true))
+        }
+        if let incorrectAnswers = question["incorrect_answers"] as? [String] {
+            answers.append(contentsOf: incorrectAnswers.map { ($0, false) })
+        }
+        answers.shuffle()
+        
+        // Cevap butonlarını oluştur
+        for (answer, isCorrect) in answers {
+            let button = UIButton(type: .system)
+            button.setTitle(answer, for: .normal)
+            button.backgroundColor = .systemBlue
+            button.setTitleColor(.white, for: .normal)
+            button.layer.cornerRadius = 10
+            button.tag = isCorrect ? 1 : 0
+            button.addTarget(self, action: #selector(answerButtonTapped(_:)), for: .touchUpInside)
+            answerStackView.addArrangedSubview(button)
+            
+            // Button height constraint
+            button.heightAnchor.constraint(equalToConstant: 50).isActive = true
         }
     }
     
-    private func createAnswerButton(_ title: String, index: Int) -> UIButton {
-        let button = UIButton(type: .system)
-        button.setTitle(title, for: .normal)
-        button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = .primaryPurple
-        button.layer.cornerRadius = 12
-        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
-        button.heightAnchor.constraint(equalToConstant: 50).isActive = true
-        button.tag = index
-        button.addTarget(self, action: #selector(answerButtonTapped(_:)), for: .touchUpInside)
-        return button
-    }
-    
     private func startTimer() {
-        remainingTime = 15
+        timeLeft = 15
         updateTimerLabel()
         
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
-            guard let self = self else { return }
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.timeLeft -= 1
+            self?.updateTimerLabel()
             
-            self.remainingTime -= 1
-            self.updateTimerLabel()
-            
-            if self.remainingTime <= 0 {
-                timer.invalidate()
-                self.timeUp()
+            if self?.timeLeft == 0 {
+                self?.timer?.invalidate()
+                self?.moveToNextQuestion()
             }
         }
     }
     
     private func updateTimerLabel() {
-        timerLabel.text = "\(remainingTime)"
+        timerLabel.text = "\(timeLeft)"
     }
     
     @objc private func answerButtonTapped(_ sender: UIButton) {
-        guard let userId = UserDefaults.standard.string(forKey: "userId") else { return }
-        
-        // Cevabı kaydet
-        userAnswers["\(currentQuestionIndex)"] = sender.tag
-        
-        // Firestore'a cevabı gönder
-        db.collection("battles").document(battleId)
-            .collection("answers").document(userId)
-            .setData([
-                "questionIndex": currentQuestionIndex,
-                "answerIndex": sender.tag,
-                "timeRemaining": remainingTime
-            ], merge: true)
-        
-        // Sonraki soruya geç
         timer?.invalidate()
-        currentQuestionIndex += 1
-        showNextQuestion()
-    }
-    
-    private func timeUp() {
-        currentQuestionIndex += 1
-        showNextQuestion()
-    }
-    
-    private func endGame() {
-        // Sonuçları hesapla ve göster
-        calculateResults()
-    }
-    
-    private func calculateResults() {
-        guard let userId = UserDefaults.standard.string(forKey: "userId") else { return }
         
-        var score = 0
-        for (index, question) in questions.enumerated() {
-            if let correctAnswer = question["correctAnswer"] as? Int,
-               let userAnswer = userAnswers["\(index)"],
-               correctAnswer == userAnswer {
-                score += 1
-            }
+        // Doğru cevap kontrolü
+        if sender.tag == 1 {
+            score += 1
+            scoreLabel.text = "Skor: \(score)"
         }
         
         // Skoru Firestore'a kaydet
-        db.collection("battles").document(battleId)
-            .collection("scores").document(userId)
-            .setData([
-                "score": score,
-                "timestamp": Timestamp(date: Date())
-            ]) { [weak self] error in
-                if let error = error {
-                    self?.showErrorAlert(error)
-                } else {
-                    self?.showResults()
-                }
-            }
+        updateScore()
+        
+        // Sonraki soruya geç
+        moveToNextQuestion()
     }
     
-    private func showResults() {
+    private func moveToNextQuestion() {
+        currentQuestionIndex += 1
+        
+        if currentQuestionIndex < questions.count {
+            showQuestion(at: currentQuestionIndex)
+            startTimer()
+        } else {
+            endQuiz()
+        }
+    }
+    
+    private func updateScore() {
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("battles").document(battleId).updateData([
+            "scores.\(currentUserId)": score
+        ]) { error in
+            if let error = error {
+                print("Error updating score: \(error)")
+            }
+        }
+    }
+    
+    private func endQuiz() {
+        timer?.invalidate()
+        
+        // Sonuç ekranına geç
         let resultsVC = BattleResultsViewController(battleId: battleId)
         navigationController?.pushViewController(resultsVC, animated: true)
     }

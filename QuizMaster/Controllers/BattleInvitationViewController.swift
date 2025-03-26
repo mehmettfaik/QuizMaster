@@ -5,8 +5,10 @@ class BattleInvitationViewController: UIViewController {
     private let db = Firestore.firestore()
     private let battleId: String
     private let opponentId: String
+    private let isCreator: Bool
     private var selectedCategory: String?
     private var selectedDifficulty: String?
+    private var categories: [String] = []
     
     // MARK: - UI Components
     private let containerStackView: UIStackView = {
@@ -27,31 +29,47 @@ class BattleInvitationViewController: UIViewController {
         return label
     }()
     
+    private lazy var waitingLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Rakibiniz oyun ayarlarını seçiyor..."
+        label.font = .systemFont(ofSize: 18, weight: .medium)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.isHidden = isCreator
+        return label
+    }()
+    
+    private lazy var blurView: UIVisualEffectView = {
+        let blurEffect = UIBlurEffect(style: .dark)
+        let view = UIVisualEffectView(effect: blurEffect)
+        view.isHidden = isCreator
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     private let categorySegmentedControl: UISegmentedControl = {
-        let items = ["Genel Kültür", "Bilim", "Spor", "Tarih", "Sanat"]
-        let control = UISegmentedControl(items: items)
-        control.selectedSegmentIndex = 0
+        let control = UISegmentedControl()
         control.backgroundColor = .systemBackground
-        control.selectedSegmentTintColor = .primaryPurple
+        control.selectedSegmentTintColor = .systemBlue
         return control
     }()
     
     private let difficultySegmentedControl: UISegmentedControl = {
-        let items = ["Kolay", "Orta", "Zor"]
-        let control = UISegmentedControl(items: items)
-        control.selectedSegmentIndex = 1
+        let control = UISegmentedControl(items: ["Kolay", "Orta", "Zor"])
         control.backgroundColor = .systemBackground
-        control.selectedSegmentTintColor = .primaryPurple
+        control.selectedSegmentTintColor = .systemBlue
+        control.selectedSegmentIndex = 0
         return control
     }()
     
     private let startButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Yarışmayı Başlat", for: .normal)
+        button.backgroundColor = .systemBlue
         button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = .primaryPurple
-        button.layer.cornerRadius = 20
-        button.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+        button.layer.cornerRadius = 10
+        button.isEnabled = false
         return button
     }()
     
@@ -63,9 +81,10 @@ class BattleInvitationViewController: UIViewController {
     }()
     
     // MARK: - Initialization
-    init(battleId: String, opponentId: String) {
+    init(battleId: String, opponentId: String, isCreator: Bool) {
         self.battleId = battleId
         self.opponentId = opponentId
+        self.isCreator = isCreator
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -76,44 +95,90 @@ class BattleInvitationViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        fetchCategories()
         setupUI()
         setupActions()
         
-        // Varsayılan değerleri ayarla
-        categoryChanged(categorySegmentedControl)
-        difficultyChanged(difficultySegmentedControl)
-        
-        print("Battle ID: \(battleId)") // Debug için
+        if !isCreator {
+            // İsteği kabul eden kullanıcı için blur efekti ve bekleme mesajı
+            blurView.isHidden = false
+            waitingLabel.isHidden = false
+            categorySegmentedControl.isEnabled = false
+            difficultySegmentedControl.isEnabled = false
+            startButton.isEnabled = false
+        }
         
         // Battle durumunu dinle
         observeBattleStatus()
     }
     
+    private func fetchCategories() {
+        db.collection("categories").getDocuments { [weak self] snapshot, error in
+            if let error = error {
+                print("Error fetching categories: \(error)")
+                return
+            }
+            
+            guard let documents = snapshot?.documents else { return }
+            
+            self?.categories = documents.compactMap { document in
+                return document.data()["name"] as? String
+            }
+            
+            DispatchQueue.main.async {
+                self?.updateCategorySegmentedControl()
+            }
+        }
+    }
+    
+    private func updateCategorySegmentedControl() {
+        // Mevcut segmentleri temizle
+        categorySegmentedControl.removeAllSegments()
+        
+        // Yeni kategorileri ekle
+        for (index, category) in categories.enumerated() {
+            categorySegmentedControl.insertSegment(withTitle: category, at: index, animated: false)
+        }
+        
+        // İlk kategoriyi seç
+        if categories.count > 0 {
+            categorySegmentedControl.selectedSegmentIndex = 0
+        }
+    }
+    
     private func observeBattleStatus() {
         guard !battleId.isEmpty else {
-            showErrorAlert(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Geçersiz yarışma ID"]))
-            navigationController?.popViewController(animated: true)
+            print("Error: Battle ID is empty")
             return
         }
         
-        print("Observing battle status for ID: \(battleId)") // Debug için
+        print("Observing battle status for battle ID: \(battleId)")
         
         db.collection("battles").document(battleId)
             .addSnapshotListener { [weak self] snapshot, error in
                 if let error = error {
-                    self?.showErrorAlert(error)
+                    print("Error observing battle status: \(error)")
                     return
                 }
                 
                 guard let data = snapshot?.data(),
-                      let status = data["status"] as? String else { return }
+                      let status = data["status"] as? String else {
+                    print("Error: Invalid battle data")
+                    return
+                }
                 
-                print("Battle status: \(status)") // Debug için
-                
-                if status == "active" {
-                    // Yarışma aktif olduğunda QuizBattle ekranına geç
-                    let quizBattleVC = QuizBattleViewController(battleId: self?.battleId ?? "")
-                    self?.navigationController?.pushViewController(quizBattleVC, animated: true)
+                if status == "started" {
+                    // Yarışma başladı, QuizBattleViewController'a geç
+                    if let category = data["category"] as? String,
+                       let difficulty = data["difficulty"] as? String {
+                        DispatchQueue.main.async {
+                            let quizBattleVC = QuizBattleViewController(category: category,
+                                                                       difficulty: difficulty,
+                                                                       battleId: self?.battleId ?? "",
+                                                                       opponentId: self?.opponentId ?? "")
+                            self?.navigationController?.pushViewController(quizBattleVC, animated: true)
+                        }
+                    }
                 }
             }
     }
@@ -123,6 +188,8 @@ class BattleInvitationViewController: UIViewController {
         view.backgroundColor = .systemBackground
         
         view.addSubview(containerStackView)
+        view.addSubview(blurView)
+        view.addSubview(waitingLabel)
         view.addSubview(loadingIndicator)
         
         let categoryLabel = UILabel()
@@ -148,12 +215,23 @@ class BattleInvitationViewController: UIViewController {
             containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
+            blurView.topAnchor.constraint(equalTo: view.topAnchor),
+            blurView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            blurView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            blurView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            waitingLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            waitingLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            waitingLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+            waitingLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            
             startButton.heightAnchor.constraint(equalToConstant: 50),
             
             loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
         
+        waitingLabel.translatesAutoresizingMaskIntoConstraints = false
         loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
     }
     
@@ -165,7 +243,8 @@ class BattleInvitationViewController: UIViewController {
     
     // MARK: - Actions
     @objc private func categoryChanged(_ sender: UISegmentedControl) {
-        let categories = ["general", "science", "sports", "history", "art"]
+        guard sender.selectedSegmentIndex >= 0,
+              sender.selectedSegmentIndex < categories.count else { return }
         selectedCategory = categories[sender.selectedSegmentIndex]
     }
     
@@ -175,55 +254,36 @@ class BattleInvitationViewController: UIViewController {
     }
     
     @objc private func startButtonTapped() {
-        guard !battleId.isEmpty else {
-            showErrorAlert(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Geçersiz yarışma ID"]))
-            return
-        }
+        guard let selectedCategory = categories[safe: categorySegmentedControl.selectedSegmentIndex] else { return }
+        let difficulties = ["easy", "medium", "hard"]
+        let selectedDifficulty = difficulties[difficultySegmentedControl.selectedSegmentIndex]
         
-        guard let category = selectedCategory,
-              let difficulty = selectedDifficulty else { return }
-        
-        startButton.isEnabled = false
-        loadingIndicator.startAnimating()
-        
-        print("Starting battle with ID: \(battleId)") // Debug için
-        
-        // Soruları getir
-        db.collection("quizzes")
-            .whereField("category", isEqualTo: category)
-            .whereField("difficulty", isEqualTo: difficulty)
-            .limit(to: 5)
-            .getDocuments { [weak self] snapshot, error in
-                if let error = error {
-                    self?.showErrorAlert(error)
-                    self?.startButton.isEnabled = true
-                    self?.loadingIndicator.stopAnimating()
-                    return
-                }
-                
-                guard let documents = snapshot?.documents else {
-                    self?.showErrorAlert(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Soru bulunamadı"]))
-                    self?.startButton.isEnabled = true
-                    self?.loadingIndicator.stopAnimating()
-                    return
-                }
-                
-                let questions = documents.map { $0.data() }
-                
-                // Yarışma ayarlarını güncelle
-                self?.db.collection("battles").document(self?.battleId ?? "").updateData([
-                    "category": category,
-                    "difficulty": difficulty,
-                    "questions": questions,
-                    "status": "active"
-                ]) { error in
-                    self?.startButton.isEnabled = true
-                    self?.loadingIndicator.stopAnimating()
-                    
-                    if let error = error {
-                        self?.showErrorAlert(error)
-                    }
-                }
+        // Yarışma dokümanını güncelle
+        db.collection("battles").document(battleId).updateData([
+            "status": "started",
+            "category": selectedCategory,
+            "difficulty": selectedDifficulty
+        ]) { [weak self] error in
+            if let error = error {
+                print("Error updating battle: \(error)")
+                return
             }
+            
+            // QuizBattleViewController'a geç
+            DispatchQueue.main.async {
+                let quizBattleVC = QuizBattleViewController(category: selectedCategory,
+                                                           difficulty: selectedDifficulty,
+                                                           battleId: self?.battleId ?? "",
+                                                           opponentId: self?.opponentId ?? "")
+                self?.navigationController?.pushViewController(quizBattleVC, animated: true)
+            }
+        }
+    }
+}
+
+// Array extension for safe index access
+extension Array {
+    subscript(safe index: Int) -> Element? {
+        return indices.contains(index) ? self[index] : nil
     }
 } 

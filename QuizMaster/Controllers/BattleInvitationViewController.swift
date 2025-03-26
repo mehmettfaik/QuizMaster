@@ -48,28 +48,31 @@ class BattleInvitationViewController: UIViewController {
         return view
     }()
     
-    private let categorySegmentedControl: UISegmentedControl = {
+    private lazy var categorySegmentedControl: UISegmentedControl = {
         let control = UISegmentedControl()
         control.backgroundColor = .systemBackground
         control.selectedSegmentTintColor = .systemBlue
+        control.isEnabled = isCreator
         return control
     }()
     
-    private let difficultySegmentedControl: UISegmentedControl = {
+    private lazy var difficultySegmentedControl: UISegmentedControl = {
         let control = UISegmentedControl(items: ["Kolay", "Orta", "Zor"])
         control.backgroundColor = .systemBackground
         control.selectedSegmentTintColor = .systemBlue
         control.selectedSegmentIndex = 0
+        control.isEnabled = isCreator
         return control
     }()
     
-    private let startButton: UIButton = {
+    private lazy var startButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Yarışmayı Başlat", for: .normal)
         button.backgroundColor = .systemBlue
         button.setTitleColor(.white, for: .normal)
         button.layer.cornerRadius = 10
-        button.isEnabled = false
+        button.isEnabled = isCreator
+        button.addTarget(self, action: #selector(startButtonTapped), for: .touchUpInside)
         return button
     }()
     
@@ -113,20 +116,15 @@ class BattleInvitationViewController: UIViewController {
     }
     
     private func fetchCategories() {
-        db.collection("categories").getDocuments { [weak self] snapshot, error in
-            if let error = error {
+        FirebaseService.shared.getQuizCategories { [weak self] result in
+            switch result {
+            case .success(let categories):
+                self?.categories = categories
+                DispatchQueue.main.async {
+                    self?.updateCategorySegmentedControl()
+                }
+            case .failure(let error):
                 print("Error fetching categories: \(error)")
-                return
-            }
-            
-            guard let documents = snapshot?.documents else { return }
-            
-            self?.categories = documents.compactMap { document in
-                return document.data()["name"] as? String
-            }
-            
-            DispatchQueue.main.async {
-                self?.updateCategorySegmentedControl()
             }
         }
     }

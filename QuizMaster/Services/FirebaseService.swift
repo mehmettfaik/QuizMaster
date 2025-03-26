@@ -304,6 +304,28 @@ extension FirebaseService {
             }
     }
     
+    func getQuizCategories(completion: @escaping (Result<[String], Error>) -> Void) {
+        db.collection("quizzes")
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                guard let documents = snapshot?.documents else {
+                    completion(.success([]))
+                    return
+                }
+                
+                // Benzersiz kategorileri al
+                let categories = Array(Set(documents.compactMap { document in
+                    document.data()["category"] as? String
+                })).sorted()
+                
+                completion(.success(categories))
+            }
+    }
+    
     func updateUserScore(userId: String, category: String, correctAnswers: Int, wrongAnswers: Int, points: Int) {
         let userRef = db.collection("users").document(userId)
         

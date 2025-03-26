@@ -1,6 +1,7 @@
 import UIKit
 import FirebaseFirestore
 import Combine
+import FirebaseAuth
 
 class OnlineBattleViewController: UIViewController {
     private let db = Firestore.firestore()
@@ -144,7 +145,7 @@ class OnlineBattleViewController: UIViewController {
     
     // MARK: - Firebase Operations
     private func getCurrentUser() {
-        guard let userId = UserDefaults.standard.string(forKey: "userId") else {
+        guard let userId = Auth.auth().currentUser?.uid else {
             showErrorAlert(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Kullanıcı bilgisi bulunamadı"]))
             return
         }
@@ -167,7 +168,13 @@ class OnlineBattleViewController: UIViewController {
                     "isOnline": true,
                     "lastSeen": Timestamp(date: Date()),
                     "name": UserDefaults.standard.string(forKey: "userName") ?? "Anonim",
-                    "avatar": UserDefaults.standard.string(forKey: "userAvatar") ?? "leo"
+                    "avatar": UserDefaults.standard.string(forKey: "userAvatar") ?? "wizard",
+                    "email": Auth.auth().currentUser?.email ?? "",
+                    "total_points": 0,
+                    "quizzes_played": 0,
+                    "quizzes_won": 0,
+                    "language": "tr",
+                    "category_stats": [:] as [String: Any]
                 ]
                 
                 self?.db.collection("users").document(userId).setData(userData) { error in
@@ -196,7 +203,7 @@ class OnlineBattleViewController: UIViewController {
                         "isOnline": isOnline,
                         "lastSeen": Timestamp(date: Date()),
                         "name": UserDefaults.standard.string(forKey: "userName") ?? "Anonim",
-                        "avatar": UserDefaults.standard.string(forKey: "userAvatar") ?? "leo"
+                        "avatar": UserDefaults.standard.string(forKey: "userAvatar") ?? "wizard"
                     ]
                     
                     self?.db.collection("users").document(userId).setData(userData) { error in
@@ -273,25 +280,56 @@ class OnlineBattleViewController: UIViewController {
     }
     
     private func createBattle() {
-        guard let userId = currentUserId else { return }
-        
-        let battleData: [String: Any] = [
-            "createdBy": userId,
-            "status": "waiting",
-            "createdAt": Timestamp(date: Date()),
-            "players": [userId],
-            "maxPlayers": 4
-        ]
-        
-        var ref: DocumentReference? = nil
-        ref = db.collection("battles").addDocument(data: battleData) { [weak self] error in
-            if let error = error {
-                self?.showErrorAlert(error)
-            } else if let battleId = ref?.documentID {
-                self?.currentBattleId = battleId
-                self?.startWaitingForPlayers(battleId: battleId)
-            }
+        guard let userId = currentUserId else {
+            showErrorAlert(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Kullanıcı bilgisi bulunamadı"]))
+            return
         }
+        
+        loadingIndicator.startAnimating()
+        createBattleButton.isEnabled = false
+        
+        // Rastgele 5 soru seç
+        db.collection("quizzes")
+            .limit(to: 5)
+            .getDocuments { [weak self] snapshot, error in
+                if let error = error {
+                    self?.showErrorAlert(error)
+                    self?.loadingIndicator.stopAnimating()
+                    self?.createBattleButton.isEnabled = true
+                    return
+                }
+                
+                guard let documents = snapshot?.documents else {
+                    self?.showErrorAlert(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Soru bulunamadı"]))
+                    self?.loadingIndicator.stopAnimating()
+                    self?.createBattleButton.isEnabled = true
+                    return
+                }
+                
+                let questions = documents.map { $0.data() }
+                
+                let battleData: [String: Any] = [
+                    "createdBy": userId,
+                    "status": "waiting",
+                    "createdAt": Timestamp(date: Date()),
+                    "players": [userId],
+                    "maxPlayers": 4,
+                    "questions": questions
+                ]
+                
+                self?.db.collection("battles").addDocument(data: battleData) { error in
+                    self?.loadingIndicator.stopAnimating()
+                    self?.createBattleButton.isEnabled = true
+                    
+                    if let error = error {
+                        self?.showErrorAlert(error)
+                    } else {
+                        // Yarışma başarıyla oluşturuldu
+                        self?.statusLabel.text = "Yarışma oluşturuldu! Oyuncular bekleniyor..."
+                        self?.startWaitingForPlayers(battleId: snapshot?.documents.first?.documentID ?? "")
+                    }
+                }
+            }
     }
     
     private func joinBattle(battleId: String) {
@@ -318,9 +356,37 @@ class OnlineBattleViewController: UIViewController {
     }
     
     private func startWaitingForPlayers(battleId: String) {
+        currentBattleId = battleId
         remainingTime = 30
         timerLabel.isHidden = false
         updateTimerLabel()
+        
+        // Yarışmayı dinle
+        db.collection("battles").document(battleId)
+            .addSnapshotListener { [weak self] snapshot, error in
+                if let error = error {
+                    self?.showErrorAlert(error)
+                    return
+                }
+                
+                guard let data = snapshot?.data(),
+                      let players = data["players"] as? [String],
+                      let status = data["status"] as? String else { return }
+                
+                // Oyuncu sayısını güncelle
+                self?.statusLabel.text = "Oyuncular Bekleniyor (\(players.count)/4)"
+                
+                // Eğer yarışma aktif duruma geçtiyse
+                if status == "active" {
+                    self?.timer?.invalidate()
+                    self?.navigateToQuizBattle(battleId: battleId)
+                }
+                
+                // Eğer yeterli oyuncu varsa veya süre dolduysa
+                if players.count >= 4 || (self?.remainingTime ?? 0) <= 0 {
+                    self?.startBattle(battleId: battleId)
+                }
+            }
         
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
             guard let self = self else { return }
@@ -336,17 +402,17 @@ class OnlineBattleViewController: UIViewController {
     }
     
     private func updateTimerLabel() {
-        timerLabel.text = "Oyun başlayana kalan süre: \(remainingTime)"
+        timerLabel.text = "\(remainingTime) saniye"
     }
     
     private func startBattle(battleId: String) {
-        db.collection("battles").document(battleId).updateData([
+        guard let currentBattleId = currentBattleId else { return }
+        
+        db.collection("battles").document(currentBattleId).updateData([
             "status": "active"
         ]) { [weak self] error in
             if let error = error {
                 self?.showErrorAlert(error)
-            } else {
-                self?.navigateToQuizBattle(battleId: battleId)
             }
         }
     }

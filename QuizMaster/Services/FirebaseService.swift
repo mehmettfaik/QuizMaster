@@ -39,6 +39,12 @@ class FirebaseService {
                 "lastSeen": Timestamp(date: Date())
             ]
             
+            // UserDefaults'a kullanıcı bilgilerini kaydet
+            UserDefaults.standard.set(userId, forKey: "userId")
+            UserDefaults.standard.set(name, forKey: "userName")
+            UserDefaults.standard.set("wizard", forKey: "userAvatar")
+            UserDefaults.standard.synchronize()
+            
             self?.db.collection("users").document(userId).setData(userData) { error in
                 if let error = error {
                     completion(.failure(error))
@@ -78,7 +84,21 @@ class FirebaseService {
                 "lastSeen": Timestamp(date: Date())
             ])
             
-            self?.getUser(userId: userId, completion: completion)
+            self?.db.collection("users").document(userId).getDocument { snapshot, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                if let userData = snapshot?.data() {
+                    UserDefaults.standard.set(userId, forKey: "userId")
+                    UserDefaults.standard.set(userData["name"] as? String ?? "", forKey: "userName")
+                    UserDefaults.standard.set(userData["avatar"] as? String ?? "wizard", forKey: "userAvatar")
+                    UserDefaults.standard.synchronize()
+                }
+                
+                self?.getUser(userId: userId, completion: completion)
+            }
         }
     }
     
@@ -132,15 +152,22 @@ class FirebaseService {
                     }
                     
                     if let document = document, document.exists {
+                        let userData = document.data() ?? [:]
+                        UserDefaults.standard.set(userId, forKey: "userId")
+                        UserDefaults.standard.set(userData["name"] as? String ?? authentication.profile?.name ?? "", forKey: "userName")
+                        UserDefaults.standard.set(userData["avatar"] as? String ?? "wizard", forKey: "userAvatar")
+                        UserDefaults.standard.synchronize()
+                        
                         self?.db.collection("users").document(userId).updateData([
                             "isOnline": true,
                             "lastSeen": Timestamp(date: Date())
                         ])
                         self?.getUser(userId: userId, completion: completion)
                     } else {
+                        let name = authentication.profile?.name ?? ""
                         let userData: [String: Any] = [
                             "email": authentication.profile?.email ?? "",
-                            "name": authentication.profile?.name ?? "",
+                            "name": name,
                             "avatar": "wizard",
                             "total_points": 0,
                             "quizzes_played": 0,
@@ -151,6 +178,11 @@ class FirebaseService {
                             "lastSeen": Timestamp(date: Date())
                         ]
                         
+                        UserDefaults.standard.set(userId, forKey: "userId")
+                        UserDefaults.standard.set(name, forKey: "userName")
+                        UserDefaults.standard.set("wizard", forKey: "userAvatar")
+                        UserDefaults.standard.synchronize()
+                        
                         self?.db.collection("users").document(userId).setData(userData) { error in
                             if let error = error {
                                 completion(.failure(error))
@@ -160,7 +192,7 @@ class FirebaseService {
                             let user = QuizMaster.User(
                                 id: userId,
                                 email: authentication.profile?.email ?? "",
-                                name: authentication.profile?.name ?? "",
+                                name: name,
                                 avatar: "wizard",
                                 totalPoints: 0,
                                 quizzesPlayed: 0,

@@ -83,11 +83,21 @@ class BattleInvitationViewController: UIViewController {
         categoryChanged(categorySegmentedControl)
         difficultyChanged(difficultySegmentedControl)
         
+        print("Battle ID: \(battleId)") // Debug için
+        
         // Battle durumunu dinle
         observeBattleStatus()
     }
     
     private func observeBattleStatus() {
+        guard !battleId.isEmpty else {
+            showErrorAlert(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Geçersiz yarışma ID"]))
+            navigationController?.popViewController(animated: true)
+            return
+        }
+        
+        print("Observing battle status for ID: \(battleId)") // Debug için
+        
         db.collection("battles").document(battleId)
             .addSnapshotListener { [weak self] snapshot, error in
                 if let error = error {
@@ -97,6 +107,8 @@ class BattleInvitationViewController: UIViewController {
                 
                 guard let data = snapshot?.data(),
                       let status = data["status"] as? String else { return }
+                
+                print("Battle status: \(status)") // Debug için
                 
                 if status == "active" {
                     // Yarışma aktif olduğunda QuizBattle ekranına geç
@@ -163,11 +175,18 @@ class BattleInvitationViewController: UIViewController {
     }
     
     @objc private func startButtonTapped() {
+        guard !battleId.isEmpty else {
+            showErrorAlert(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Geçersiz yarışma ID"]))
+            return
+        }
+        
         guard let category = selectedCategory,
               let difficulty = selectedDifficulty else { return }
         
         startButton.isEnabled = false
         loadingIndicator.startAnimating()
+        
+        print("Starting battle with ID: \(battleId)") // Debug için
         
         // Soruları getir
         db.collection("quizzes")

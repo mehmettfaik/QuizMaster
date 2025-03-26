@@ -309,6 +309,10 @@ class OnlineBattleViewController: UIViewController {
                 
                 let questions = documents.map { $0.data() }
                 
+                // Önce yeni bir battle dokümanı oluştur
+                let battleRef = self?.db.collection("battles").document()
+                guard let battleId = battleRef?.documentID else { return }
+                
                 let battleData: [String: Any] = [
                     "createdBy": userId,
                     "status": "waiting",
@@ -318,7 +322,7 @@ class OnlineBattleViewController: UIViewController {
                     "questions": questions
                 ]
                 
-                self?.db.collection("battles").addDocument(data: battleData) { error in
+                battleRef?.setData(battleData) { [weak self] error in
                     self?.loadingIndicator.stopAnimating()
                     self?.createBattleButton.isEnabled = true
                     
@@ -326,8 +330,9 @@ class OnlineBattleViewController: UIViewController {
                         self?.showErrorAlert(error)
                     } else {
                         // Yarışma başarıyla oluşturuldu
+                        self?.currentBattleId = battleId
                         self?.statusLabel.text = "Yarışma oluşturuldu! Oyuncular bekleniyor..."
-                        self?.startWaitingForPlayers(battleId: snapshot?.documents.first?.documentID ?? "")
+                        self?.startWaitingForPlayers(battleId: battleId)
                     }
                 }
             }
@@ -426,6 +431,8 @@ class OnlineBattleViewController: UIViewController {
     private func observeBattleInvitations() {
         guard let userId = currentUserId else { return }
         
+        print("Observing battle invitations for user: \(userId)") // Debug için
+        
         // Gelen davetleri dinle
         db.collection("battleInvitations")
             .whereField("invitedPlayer", isEqualTo: userId)
@@ -469,9 +476,13 @@ class OnlineBattleViewController: UIViewController {
                     let data = document.data()
                     if let battleId = data["battleId"] as? String,
                        let invitedPlayer = data["invitedPlayer"] as? String {
+                        print("Accepted invitation found with battle ID: \(battleId)") // Debug için
+                        
                         // Ayarlar ekranına yönlendir
-                        let battleInvitationVC = BattleInvitationViewController(battleId: battleId, opponentId: invitedPlayer)
-                        self?.navigationController?.pushViewController(battleInvitationVC, animated: true)
+                        DispatchQueue.main.async {
+                            let battleInvitationVC = BattleInvitationViewController(battleId: battleId, opponentId: invitedPlayer)
+                            self?.navigationController?.pushViewController(battleInvitationVC, animated: true)
+                        }
                     }
                 }
             }
@@ -510,12 +521,15 @@ class OnlineBattleViewController: UIViewController {
         let battleRef = db.collection("battles").document()
         let battleId = battleRef.documentID
         
+        print("Creating battle with ID: \(battleId)") // Debug için
+        
         battleRef.setData(battleData) { [weak self] error in
             if let error = error {
                 self?.showErrorAlert(error)
                 return
             }
             
+            print("Battle created successfully") // Debug için
             self?.currentBattleId = battleId
             
             // Daveti güncelle
@@ -528,9 +542,13 @@ class OnlineBattleViewController: UIViewController {
                     return
                 }
                 
-                // Davet eden kullanıcıya bildirim gönder ve ayarlar ekranına yönlendir
-                let battleInvitationVC = BattleInvitationViewController(battleId: battleId, opponentId: currentUserId)
-                self?.navigationController?.pushViewController(battleInvitationVC, animated: true)
+                print("Invitation updated successfully") // Debug için
+                
+                // Ayarlar ekranına yönlendir
+                DispatchQueue.main.async {
+                    let battleInvitationVC = BattleInvitationViewController(battleId: battleId, opponentId: currentUserId)
+                    self?.navigationController?.pushViewController(battleInvitationVC, animated: true)
+                }
             }
         }
     }

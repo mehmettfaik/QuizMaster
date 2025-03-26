@@ -2,6 +2,7 @@ import UIKit
 import FirebaseFirestore
 import Combine
 import FirebaseAuth
+import FirebaseFirestoreFirebase
 
 class QuizBattleViewController: UIViewController {
     private let category: String
@@ -17,6 +18,9 @@ class QuizBattleViewController: UIViewController {
     private var timeLeft = 15 // Her soru için 15 saniye
     private var score = 0
     private var players: [[String: Any]] = []
+    private var questionListener: ListenerRegistration?
+    private var currentQuestionData: [String: Any]?
+    private var isAnswered = false
     
     // MARK: - UI Components
     private let containerStackView: UIStackView = {
@@ -88,13 +92,18 @@ class QuizBattleViewController: UIViewController {
         setupUI()
         setupCollectionView()
         setupCloseButton()
-        fetchQuestions()
-        observePlayers()
+        checkBattleStatus()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         timer?.invalidate()
+        updateUserStatus(isPlaying: false)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateUserStatus(isPlaying: true)
     }
     
     // MARK: - Setup
@@ -135,32 +144,107 @@ class QuizBattleViewController: UIViewController {
         navigationItem.leftBarButtonItem = closeButton
     }
     
+    // MARK: - Battle Management
+    private func checkBattleStatus() {
+        db.collection("battles").document(battleId).getDocument { [weak self] snapshot, error in
+            if let error = error {
+                print("Error checking battle status: \(error)")
+                self?.navigationController?.popToRootViewController(animated: true)
+                return
+            }
+            
+            guard let data = snapshot?.data(),
+                  let status = data["status"] as? String,
+                  status == "started" else {
+                print("Battle is not in valid state")
+                self?.navigationController?.popToRootViewController(animated: true)
+                return
+            }
+            
+            // Battle geçerliyse soruları getir ve oyuncuları gözlemle
+            self?.fetchQuestions()
+            self?.observePlayers()
+            self?.observeBattleStatus()
+        }
+    }
+    
+    private func updateUserStatus(isPlaying: Bool) {
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("users").document(currentUserId).updateData([
+            "isPlaying": isPlaying,
+            "currentBattleId": isPlaying ? self.battleId : nil
+        ])
+    }
+    
+    private func observeBattleStatus() {
+        db.collection("battles").document(battleId)
+            .addSnapshotListener { [weak self] snapshot, error in
+                if let error = error {
+                    print("Error observing battle status: \(error)")
+                    return
+                }
+                
+                guard let data = snapshot?.data(),
+                      let status = data["status"] as? String else { return }
+                
+                if status == "cancelled" {
+                    DispatchQueue.main.async {
+                        self?.handleBattleCancellation()
+                    }
+                }
+            }
+    }
+    
+    private func handleBattleCancellation() {
+        timer?.invalidate()
+        
+        let alert = UIAlertController(
+            title: "Yarışma İptal Edildi",
+            message: "Rakibiniz yarışmadan ayrıldı.",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Tamam", style: .default) { [weak self] _ in
+            self?.navigationController?.popToRootViewController(animated: true)
+        })
+        
+        present(alert, animated: true)
+    }
+    
     @objc private func closeButtonTapped() {
         let alert = UIAlertController(
             title: "Yarışmadan Çık",
-            message: "Yarışmadan çıkmak istediğinize emin misiniz?",
+            message: "Yarışmadan çıkmak istediğinize emin misiniz? Rakibiniz kazanacak.",
             preferredStyle: .alert
         )
         
         alert.addAction(UIAlertAction(title: "Hayır", style: .cancel))
         
         alert.addAction(UIAlertAction(title: "Evet", style: .destructive) { [weak self] _ in
-            // Yarışmayı sonlandır ve skoru güncelle
-            self?.timer?.invalidate()
-            self?.updateScore()
+            guard let self = self else { return }
             
-            // Battles koleksiyonunda status'ü güncelle
-            guard let battleId = self?.battleId else { return }
-            self?.db.collection("battles").document(battleId).updateData([
-                "status": "ended"
+            // Timer'ı durdur
+            self.timer?.invalidate()
+            
+            // Rakibe otomatik olarak kazandır
+            guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+            let opponentScore = 5 // Maksimum skor
+            
+            self.db.collection("battles").document(self.battleId).updateData([
+                "status": "ended",
+                "endedAt": Timestamp(),
+                "endedBy": currentUserId,
+                "scores.\(self.opponentId)": opponentScore,
+                "scores.\(currentUserId)": self.score
             ]) { error in
                 if let error = error {
-                    print("Error updating battle status: \(error)")
+                    print("Error ending battle: \(error)")
                 }
+                
+                // Ana sayfaya dön
+                self.navigationController?.popToRootViewController(animated: true)
             }
-            
-            // Ana sayfaya dön
-            self?.navigationController?.popToRootViewController(animated: true)
         })
         
         present(alert, animated: true)
@@ -168,10 +252,22 @@ class QuizBattleViewController: UIViewController {
     
     // MARK: - Game Logic
     private func fetchQuestions() {
+        // Format category name for Firestore path
+        let formattedCategory = category.components(separatedBy: " ")
+            .enumerated()
+            .map { index, word in
+                if index == 0 {
+                    return word.lowercased()
+                }
+                return word.prefix(1).uppercased() + word.dropFirst().lowercased()
+            }
+            .joined()
+        
         // Firestore'dan soruları getir
-        db.collection("quizzes")
-            .whereField("category", isEqualTo: category)
-            .whereField("difficulty", isEqualTo: difficulty)
+        db.collection("aaaa")
+            .document(formattedCategory)
+            .collection("questions")
+            .whereField("difficulty", isEqualTo: difficulty.lowercased())
             .limit(to: 5)
             .getDocuments { [weak self] snapshot, error in
                 if let error = error {
@@ -182,23 +278,122 @@ class QuizBattleViewController: UIViewController {
                 guard let documents = snapshot?.documents else { return }
                 
                 self?.questions = documents.map { $0.data() }
-                self?.startQuiz()
+                
+                // Eğer yarışmayı oluşturan kullanıcıysak, soruları battle dökümanına ekle
+                if let currentUserId = Auth.auth().currentUser?.uid,
+                   currentUserId == self?.opponentId {
+                    self?.db.collection("battles").document(self?.battleId ?? "").updateData([
+                        "questions": self?.questions ?? [],
+                        "currentQuestionIndex": 0,
+                        "startTime": Timestamp()
+                    ]) { error in
+                        if let error = error {
+                            print("Error updating battle with questions: \(error)")
+                            return
+                        }
+                        self?.startQuestionSync()
+                    }
+                } else {
+                    self?.startQuestionSync()
+                }
             }
     }
     
-    private func startQuiz() {
-        showQuestion(at: currentQuestionIndex)
-        startTimer()
+    private func startQuestionSync() {
+        // Mevcut listener'ı temizle
+        questionListener?.remove()
+        
+        // Battle'daki soru değişikliklerini dinle
+        questionListener = db.collection("battles").document(battleId)
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self = self,
+                      let data = snapshot?.data(),
+                      let questions = data["questions"] as? [[String: Any]],
+                      let currentIndex = data["currentQuestionIndex"] as? Int,
+                      currentIndex < questions.count else {
+                    return
+                }
+                
+                // Yeni soru geldiğinde
+                let questionData = questions[currentIndex]
+                if self.currentQuestionData != questionData {
+                    self.currentQuestionData = questionData
+                    self.isAnswered = false
+                    self.showSyncedQuestion(questionData)
+                }
+                
+                // Cevapları kontrol et
+                if let answers = data["answers"] as? [String: Any],
+                   let winner = answers["winner"] as? String,
+                   !self.isAnswered {
+                    self.handleAnswer(winner: winner)
+                }
+            }
     }
     
-    private func showQuestion(at index: Int) {
-        guard index < questions.count else {
-            endQuiz()
-            return
+    private func showSyncedQuestion(_ questionData: [String: Any]) {
+        DispatchQueue.main.async {
+            self.currentQuestion = questionData
+            self.updateUI()
+            self.startTimer()
+        }
+    }
+    
+    private func handleAnswer(winner: String) {
+        guard !isAnswered else { return }
+        isAnswered = true
+        
+        let currentUserId = Auth.auth().currentUser?.uid ?? ""
+        if winner == currentUserId {
+            score += 1
+            scoreLabel.text = "Skor: \(score)"
         }
         
-        currentQuestion = questions[index]
-        updateUI()
+        // Tüm butonları devre dışı bırak
+        answerStackView.arrangedSubviews.forEach { view in
+            if let button = view as? UIButton {
+                button.isEnabled = false
+            }
+        }
+        
+        // 2 saniye sonra sonraki soruya geç
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            self?.moveToNextQuestion()
+        }
+    }
+    
+    @objc private func answerButtonTapped(_ sender: UIButton) {
+        guard !isAnswered,
+              let currentUserId = Auth.auth().currentUser?.uid else { return }
+        
+        timer?.invalidate()
+        isAnswered = true
+        
+        // Cevabı Firestore'a kaydet
+        if sender.tag == 1 { // Doğru cevap
+            db.collection("battles").document(battleId).updateData([
+                "answers": [
+                    "winner": currentUserId,
+                    "answeredAt": Timestamp()
+                ]
+            ])
+        }
+    }
+    
+    private func moveToNextQuestion() {
+        guard let currentUserId = Auth.auth().currentUser?.uid,
+              currentUserId == opponentId else { return }
+        
+        currentQuestionIndex += 1
+        
+        if currentQuestionIndex < questions.count {
+            db.collection("battles").document(battleId).updateData([
+                "currentQuestionIndex": currentQuestionIndex,
+                "answers": [:] // Cevapları sıfırla
+            ])
+        } else {
+            endQuiz()
+        }
     }
     
     private func updateUI() {
@@ -241,12 +436,19 @@ class QuizBattleViewController: UIViewController {
         
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.timeLeft -= 1
-            self?.updateTimerLabel()
+            guard let self = self else { return }
             
-            if self?.timeLeft == 0 {
-                self?.timer?.invalidate()
-                self?.moveToNextQuestion()
+            self.timeLeft -= 1
+            self.updateTimerLabel()
+            
+            if self.timeLeft == 0 && !self.isAnswered {
+                self.timer?.invalidate()
+                self.isAnswered = true
+                
+                // Süre dolduğunda sonraki soruya geç
+                if Auth.auth().currentUser?.uid == self.opponentId {
+                    self.moveToNextQuestion()
+                }
             }
         }
     }
@@ -255,51 +457,28 @@ class QuizBattleViewController: UIViewController {
         timerLabel.text = "\(timeLeft)"
     }
     
-    @objc private func answerButtonTapped(_ sender: UIButton) {
-        timer?.invalidate()
-        
-        // Doğru cevap kontrolü
-        if sender.tag == 1 {
-            score += 1
-            scoreLabel.text = "Skor: \(score)"
-        }
-        
-        // Skoru Firestore'a kaydet
-        updateScore()
-        
-        // Sonraki soruya geç
-        moveToNextQuestion()
-    }
-    
-    private func moveToNextQuestion() {
-        currentQuestionIndex += 1
-        
-        if currentQuestionIndex < questions.count {
-            showQuestion(at: currentQuestionIndex)
-            startTimer()
-        } else {
-            endQuiz()
-        }
-    }
-    
-    private func updateScore() {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
-        
-        db.collection("battles").document(battleId).updateData([
-            "scores.\(currentUserId)": score
-        ]) { error in
-            if let error = error {
-                print("Error updating score: \(error)")
-            }
-        }
-    }
-    
     private func endQuiz() {
         timer?.invalidate()
         
-        // Sonuç ekranına geç
-        let resultsVC = BattleResultsViewController(battleId: battleId)
-        navigationController?.pushViewController(resultsVC, animated: true)
+        // Battle'ı bitir
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("battles").document(battleId).updateData([
+            "status": "ended",
+            "endedAt": Timestamp(),
+            "endedBy": currentUserId,
+            "scores.\(currentUserId)": score
+        ]) { [weak self] error in
+            if let error = error {
+                print("Error ending battle: \(error)")
+            }
+            
+            // Sonuç ekranına geç
+            if let self = self {
+                let resultsVC = BattleResultsViewController(battleId: self.battleId)
+                self.navigationController?.pushViewController(resultsVC, animated: true)
+            }
+        }
     }
     
     private func observePlayers() {

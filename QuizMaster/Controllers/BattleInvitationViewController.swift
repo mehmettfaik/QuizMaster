@@ -1,5 +1,6 @@
 import UIKit
 import FirebaseFirestore
+import FirebaseFirebaseAuth
 
 class BattleInvitationViewController: UIViewController {
     private let db = Firestore.firestore()
@@ -209,32 +210,60 @@ class BattleInvitationViewController: UIViewController {
         
         print("Observing battle status for battle ID: \(battleId)")
         
-        db.collection("battles").document(battleId)
-            .addSnapshotListener { [weak self] snapshot, error in
-                if let error = error {
-                    print("Error observing battle status: \(error)")
-                    return
-                }
-                
-                guard let data = snapshot?.data(),
-                      let status = data["status"] as? String else {
-                    print("Error: Invalid battle data")
-                    return
-                }
-                
-                if status == "started" {
-                    if let category = data["category"] as? String,
-                       let difficulty = data["difficulty"] as? String {
+        // Önce mevcut battle'ın geçerli olup olmadığını kontrol et
+        db.collection("battles").document(battleId).getDocument { [weak self] snapshot, error in
+            if let error = error {
+                print("Error checking battle status: \(error)")
+                self?.navigationController?.popToRootViewController(animated: true)
+                return
+            }
+            
+            guard let data = snapshot?.data(),
+                  let players = data["players"] as? [String],
+                  let status = data["status"] as? String else {
+                print("Invalid battle data or battle doesn't exist")
+                self?.navigationController?.popToRootViewController(animated: true)
+                return
+            }
+            
+            // Eğer battle zaten başlamışsa veya iptal edilmişse ana sayfaya dön
+            if status == "ended" || status == "cancelled" {
+                self?.navigationController?.popToRootViewController(animated: true)
+                return
+            }
+            
+            // Battle'ı dinlemeye başla
+            self?.db.collection("battles").document(self?.battleId ?? "")
+                .addSnapshotListener { [weak self] snapshot, error in
+                    if let error = error {
+                        print("Error observing battle status: \(error)")
+                        return
+                    }
+                    
+                    guard let data = snapshot?.data(),
+                          let status = data["status"] as? String else {
+                        print("Error: Invalid battle data")
+                        return
+                    }
+                    
+                    if status == "started" {
+                        if let category = data["category"] as? String,
+                           let difficulty = data["difficulty"] as? String {
+                            DispatchQueue.main.async {
+                                let quizBattleVC = QuizBattleViewController(category: category,
+                                                                          difficulty: difficulty,
+                                                                          battleId: self?.battleId ?? "",
+                                                                          opponentId: self?.opponentId ?? "")
+                                self?.navigationController?.setViewControllers([quizBattleVC], animated: true)
+                            }
+                        }
+                    } else if status == "cancelled" || status == "ended" {
                         DispatchQueue.main.async {
-                            let quizBattleVC = QuizBattleViewController(category: category,
-                                                                       difficulty: difficulty,
-                                                                       battleId: self?.battleId ?? "",
-                                                                       opponentId: self?.opponentId ?? "")
-                            self?.navigationController?.pushViewController(quizBattleVC, animated: true)
+                            self?.navigationController?.popToRootViewController(animated: true)
                         }
                     }
                 }
-            }
+        }
     }
     
     @objc private func startButtonTapped() {
@@ -242,24 +271,52 @@ class BattleInvitationViewController: UIViewController {
         let difficulties = ["easy", "medium", "hard"]
         let selectedDifficulty = difficulties[difficultySegmentedControl.selectedSegmentIndex]
         
-        print("Starting battle with category: \(selectedCategory), difficulty: \(selectedDifficulty)") // Debug için
+        // Butonu devre dışı bırak
+        startButton.isEnabled = false
         
-        db.collection("battles").document(battleId).updateData([
-            "status": "started",
-            "category": selectedCategory,
-            "difficulty": selectedDifficulty
-        ]) { [weak self] error in
+        // Önce battle'ın hala geçerli olduğunu kontrol et
+        db.collection("battles").document(battleId).getDocument { [weak self] snapshot, error in
+            guard let self = self else { return }
+            
             if let error = error {
-                print("Error updating battle: \(error)")
+                print("Error checking battle status: \(error)")
+                self.startButton.isEnabled = true
                 return
             }
             
-            DispatchQueue.main.async {
-                let quizBattleVC = QuizBattleViewController(category: selectedCategory,
-                                                           difficulty: selectedDifficulty,
-                                                           battleId: self?.battleId ?? "",
-                                                           opponentId: self?.opponentId ?? "")
-                self?.navigationController?.pushViewController(quizBattleVC, animated: true)
+            guard let data = snapshot?.data(),
+                  let players = data["players"] as? [String],
+                  let status = data["status"] as? String,
+                  status != "started",
+                  status != "ended",
+                  status != "cancelled",
+                  players.contains(self.opponentId) else {
+                print("Battle is no longer valid")
+                self.startButton.isEnabled = true
+                self.navigationController?.popToRootViewController(animated: true)
+                return
+            }
+            
+            // Battle'ı başlat
+            self.db.collection("battles").document(self.battleId).updateData([
+                "status": "started",
+                "category": selectedCategory,
+                "difficulty": selectedDifficulty,
+                "startedAt": Timestamp()
+            ]) { error in
+                if let error = error {
+                    print("Error updating battle: \(error)")
+                    self.startButton.isEnabled = true
+                    return
+                }
+                
+                DispatchQueue.main.async {
+                    let quizBattleVC = QuizBattleViewController(category: selectedCategory,
+                                                              difficulty: selectedDifficulty,
+                                                              battleId: self.battleId,
+                                                              opponentId: self.opponentId)
+                    self.navigationController?.setViewControllers([quizBattleVC], animated: true)
+                }
             }
         }
     }
@@ -274,16 +331,24 @@ class BattleInvitationViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "Hayır", style: .cancel))
         
         alert.addAction(UIAlertAction(title: "Evet", style: .destructive) { [weak self] _ in
-            // Battles koleksiyonundan yarışmayı sil
-            guard let battleId = self?.battleId else { return }
-            self?.db.collection("battles").document(battleId).delete { error in
-                if let error = error {
-                    print("Error deleting battle: \(error)")
-                }
-            }
+            guard let self = self else { return }
             
-            // Ana sayfaya dön
-            self?.navigationController?.popToRootViewController(animated: true)
+            // Battle'ı iptal et
+            self.db.collection("battles").document(self.battleId).updateData([
+                "status": "cancelled",
+                "cancelledAt": Timestamp(),
+                "cancelledBy": Auth.auth().currentUser?.uid ?? ""
+            ]) { error in
+                if let error = error {
+                    print("Error cancelling battle: \(error)")
+                }
+                
+                // Battle invitation'ı sil
+                self.db.collection("battleInvitations").document(self.battleId).delete()
+                
+                // Ana sayfaya dön
+                self.navigationController?.popToRootViewController(animated: true)
+            }
         })
         
         present(alert, animated: true)

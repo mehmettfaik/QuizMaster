@@ -506,19 +506,22 @@ class OnlineBattleViewController: UIViewController {
             "createdAt": Timestamp(date: Date())
         ]
         
-        db.collection("battles").addDocument(data: battleData) { [weak self] error in
+        // Önce yeni bir battle dokümanı oluştur
+        let battleRef = db.collection("battles").document()
+        let battleId = battleRef.documentID
+        
+        battleRef.setData(battleData) { [weak self] error in
             if let error = error {
                 self?.showErrorAlert(error)
                 return
             }
             
-            guard let documentId = self?.db.collection("battles").document().documentID else { return }
-            self?.currentBattleId = documentId
+            self?.currentBattleId = battleId
             
             // Daveti güncelle
             self?.db.collection("battleInvitations").document(invitationId).updateData([
                 "status": "accepted",
-                "battleId": documentId
+                "battleId": battleId
             ]) { error in
                 if let error = error {
                     self?.showErrorAlert(error)
@@ -526,7 +529,7 @@ class OnlineBattleViewController: UIViewController {
                 }
                 
                 // Davet eden kullanıcıya bildirim gönder ve ayarlar ekranına yönlendir
-                let battleInvitationVC = BattleInvitationViewController(battleId: documentId, opponentId: currentUserId)
+                let battleInvitationVC = BattleInvitationViewController(battleId: battleId, opponentId: currentUserId)
                 self?.navigationController?.pushViewController(battleInvitationVC, animated: true)
             }
         }

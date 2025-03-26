@@ -76,6 +76,7 @@ class OnlineBattleViewController: UIViewController {
         setupActions()
         getCurrentUser()
         observeOnlineUsers()
+        observeBattleInvitations()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -420,6 +421,98 @@ class OnlineBattleViewController: UIViewController {
     private func navigateToQuizBattle(battleId: String) {
         let quizBattleVC = QuizBattleViewController(battleId: battleId)
         navigationController?.pushViewController(quizBattleVC, animated: true)
+    }
+    
+    private func observeBattleInvitations() {
+        guard let userId = currentUserId else { return }
+        
+        db.collection("battleInvitations")
+            .whereField("invitedPlayer", isEqualTo: userId)
+            .whereField("status", isEqualTo: "invitation")
+            .addSnapshotListener { [weak self] snapshot, error in
+                if let error = error {
+                    self?.showErrorAlert(error)
+                    return
+                }
+                
+                guard let documents = snapshot?.documents else { return }
+                
+                for document in documents {
+                    let data = document.data()
+                    if let createdBy = data["createdBy"] as? String {
+                        // Kullanıcı bilgilerini al
+                        self?.db.collection("users").document(createdBy).getDocument { snapshot, error in
+                            if let userData = snapshot?.data(),
+                               let userName = userData["name"] as? String {
+                                // Davet bildirimini göster
+                                self?.showInvitationAlert(from: userName, invitationId: document.documentID, senderId: createdBy)
+                            }
+                        }
+                    }
+                }
+            }
+    }
+    
+    private func showInvitationAlert(from userName: String, invitationId: String, senderId: String) {
+        let alert = UIAlertController(
+            title: "Yarışma Daveti",
+            message: "\(userName) sizi yarışmaya davet ediyor!",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Kabul Et", style: .default) { [weak self] _ in
+            self?.acceptInvitation(invitationId: invitationId, senderId: senderId)
+        })
+        
+        alert.addAction(UIAlertAction(title: "Reddet", style: .cancel) { [weak self] _ in
+            self?.rejectInvitation(invitationId: invitationId)
+        })
+        
+        present(alert, animated: true)
+    }
+    
+    private func acceptInvitation(invitationId: String, senderId: String) {
+        guard let currentUserId = currentUserId else { return }
+        
+        // Yarışma oluştur
+        let battleData: [String: Any] = [
+            "createdBy": senderId,
+            "players": [senderId, currentUserId],
+            "status": "waiting",
+            "createdAt": Timestamp(date: Date())
+        ]
+        
+        db.collection("battles").addDocument(data: battleData) { [weak self] error in
+            if let error = error {
+                self?.showErrorAlert(error)
+                return
+            }
+            
+            // Daveti güncelle
+            self?.db.collection("battleInvitations").document(invitationId).updateData([
+                "status": "accepted",
+                "battleId": self?.currentBattleId ?? ""
+            ])
+            
+            // Davet eden kullanıcıya bildirim gönder
+            self?.notifyInviter(userId: senderId, status: "accepted")
+        }
+    }
+    
+    private func rejectInvitation(invitationId: String) {
+        db.collection("battleInvitations").document(invitationId).updateData([
+            "status": "rejected"
+        ])
+    }
+    
+    private func notifyInviter(userId: String, status: String) {
+        // Burada davet eden kullanıcıya bildirim gönderebilirsiniz
+        // Örneğin: Push notification veya in-app notification
+        if status == "accepted" {
+            // Davet eden kullanıcıyı BattleInvitationViewController'a yönlendir
+            let battleInvitationVC = BattleInvitationViewController(battleId: currentBattleId ?? "", opponentId: userId)
+            navigationController?.pushViewController(battleInvitationVC, animated: true)
+        }
     }
 }
 

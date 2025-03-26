@@ -1,6 +1,6 @@
 import UIKit
 import FirebaseFirestore
-import FirebaseFirebaseAuth
+import FirebaseAuth
 
 class BattleInvitationViewController: UIViewController {
     private let db = Firestore.firestore()

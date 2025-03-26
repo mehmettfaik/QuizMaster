@@ -2,7 +2,7 @@ import UIKit
 import FirebaseFirestore
 import Combine
 import FirebaseAuth
-import FirebaseFirestoreFirebase
+
 
 class QuizBattleViewController: UIViewController {
     private let category: String
@@ -299,6 +299,16 @@ class QuizBattleViewController: UIViewController {
             }
     }
     
+    private func isDifferentQuestion(_ newQuestion: [String: Any]) -> Bool {
+        guard let currentQuestion = currentQuestionData else { return true }
+        
+        // Temel alanları karşılaştır
+        let currentQuestionText = currentQuestion["question"] as? String ?? ""
+        let newQuestionText = newQuestion["question"] as? String ?? ""
+        
+        return currentQuestionText != newQuestionText
+    }
+    
     private func startQuestionSync() {
         // Mevcut listener'ı temizle
         questionListener?.remove()
@@ -316,7 +326,7 @@ class QuizBattleViewController: UIViewController {
                 
                 // Yeni soru geldiğinde
                 let questionData = questions[currentIndex]
-                if self.currentQuestionData != questionData {
+                if self.isDifferentQuestion(questionData) {
                     self.currentQuestionData = questionData
                     self.isAnswered = false
                     self.showSyncedQuestion(questionData)

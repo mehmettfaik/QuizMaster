@@ -34,7 +34,9 @@ class FirebaseService {
                 "quizzes_played": 0,
                 "quizzes_won": 0,
                 "language": "tr",
-                "category_stats": [:] as [String: Any]
+                "category_stats": [:] as [String: Any],
+                "isOnline": true,
+                "lastSeen": Timestamp(date: Date())
             ]
             
             self?.db.collection("users").document(userId).setData(userData) { error in
@@ -71,11 +73,22 @@ class FirebaseService {
                 return
             }
             
+            self?.db.collection("users").document(userId).updateData([
+                "isOnline": true,
+                "lastSeen": Timestamp(date: Date())
+            ])
+            
             self?.getUser(userId: userId, completion: completion)
         }
     }
     
     func signOut() throws {
+        if let userId = Auth.auth().currentUser?.uid {
+            self.db.collection("users").document(userId).updateData([
+                "isOnline": false,
+                "lastSeen": Timestamp(date: Date())
+            ])
+        }
         try auth.signOut()
     }
     
@@ -112,27 +125,30 @@ class FirebaseService {
                     return
                 }
                 
-                // Check if user exists
-                self?.db.collection("users").document(userId).getDocument { [weak self] snapshot, error in
+                self?.db.collection("users").document(userId).getDocument { [weak self] document, error in
                     if let error = error {
                         completion(.failure(error))
                         return
                     }
                     
-                    if let snapshot = snapshot, snapshot.exists == true {
-                        // User exists, get data
+                    if let document = document, document.exists {
+                        self?.db.collection("users").document(userId).updateData([
+                            "isOnline": true,
+                            "lastSeen": Timestamp(date: Date())
+                        ])
                         self?.getUser(userId: userId, completion: completion)
                     } else {
-                        // New user, create profile
                         let userData: [String: Any] = [
                             "email": authentication.profile?.email ?? "",
                             "name": authentication.profile?.name ?? "",
-                            "avatar": "wizard", // Default avatar for new users
+                            "avatar": "wizard",
                             "total_points": 0,
                             "quizzes_played": 0,
                             "quizzes_won": 0,
                             "language": "tr",
-                            "category_stats": [:] as [String: Any]
+                            "category_stats": [:] as [String: Any],
+                            "isOnline": true,
+                            "lastSeen": Timestamp(date: Date())
                         ]
                         
                         self?.db.collection("users").document(userId).setData(userData) { error in
@@ -145,7 +161,7 @@ class FirebaseService {
                                 id: userId,
                                 email: authentication.profile?.email ?? "",
                                 name: authentication.profile?.name ?? "",
-                                avatar: "wizard", // Default avatar for new users
+                                avatar: "wizard",
                                 totalPoints: 0,
                                 quizzesPlayed: 0,
                                 quizzesWon: 0,

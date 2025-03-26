@@ -7,11 +7,12 @@
 
 import UIKit
 import FirebaseAuth
+import FirebaseFirestore
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
-
+    private let db = Firestore.firestore()
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
@@ -26,6 +27,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if Auth.auth().currentUser != nil {
             // Kullanıcı giriş yapmışsa TabBarController'ı göster
             window.rootViewController = MainTabBarController()
+            updateUserOnlineStatus(isOnline: true)
         } else {
             // Kullanıcı giriş yapmamışsa LoginViewController'ı göster
             window.rootViewController = LoginViewController()
@@ -39,16 +41,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // This occurs shortly after the scene enters the background, or when its session is discarded.
         // Release any resources associated with this scene that can be re-created the next time the scene connects.
         // The scene may re-connect later, as its session was not necessarily discarded (see `application:didDiscardSceneSessions` instead).
+        updateUserOnlineStatus(isOnline: false)
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
         // Called when the scene has moved from an inactive state to an active state.
         // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
+        updateUserOnlineStatus(isOnline: true)
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
         // Called when the scene will move from an active state to an inactive state.
         // This may occur due to temporary interruptions (ex. an incoming phone call).
+        updateUserOnlineStatus(isOnline: false)
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
@@ -62,7 +67,18 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // to restore the scene back to its current state.
     }
 
-
+    private func updateUserOnlineStatus(isOnline: Bool) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("users").document(userId).updateData([
+            "isOnline": isOnline,
+            "lastSeen": Timestamp(date: Date())
+        ]) { error in
+            if let error = error {
+                print("Error updating online status: \(error.localizedDescription)")
+            }
+        }
+    }
 }
 
 // Custom TabBar class for curved design

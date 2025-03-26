@@ -426,6 +426,7 @@ class OnlineBattleViewController: UIViewController {
     private func observeBattleInvitations() {
         guard let userId = currentUserId else { return }
         
+        // Gelen davetleri dinle
         db.collection("battleInvitations")
             .whereField("invitedPlayer", isEqualTo: userId)
             .whereField("status", isEqualTo: "invitation")
@@ -448,6 +449,29 @@ class OnlineBattleViewController: UIViewController {
                                 self?.showInvitationAlert(from: userName, invitationId: document.documentID, senderId: createdBy)
                             }
                         }
+                    }
+                }
+            }
+        
+        // Gönderilen davetlerin durumunu dinle
+        db.collection("battleInvitations")
+            .whereField("createdBy", isEqualTo: userId)
+            .whereField("status", isEqualTo: "accepted")
+            .addSnapshotListener { [weak self] snapshot, error in
+                if let error = error {
+                    self?.showErrorAlert(error)
+                    return
+                }
+                
+                guard let documents = snapshot?.documents else { return }
+                
+                for document in documents {
+                    let data = document.data()
+                    if let battleId = data["battleId"] as? String,
+                       let invitedPlayer = data["invitedPlayer"] as? String {
+                        // Ayarlar ekranına yönlendir
+                        let battleInvitationVC = BattleInvitationViewController(battleId: battleId, opponentId: invitedPlayer)
+                        self?.navigationController?.pushViewController(battleInvitationVC, animated: true)
                     }
                 }
             }
@@ -488,14 +512,23 @@ class OnlineBattleViewController: UIViewController {
                 return
             }
             
+            guard let documentId = self?.db.collection("battles").document().documentID else { return }
+            self?.currentBattleId = documentId
+            
             // Daveti güncelle
             self?.db.collection("battleInvitations").document(invitationId).updateData([
                 "status": "accepted",
-                "battleId": self?.currentBattleId ?? ""
-            ])
-            
-            // Davet eden kullanıcıya bildirim gönder
-            self?.notifyInviter(userId: senderId, status: "accepted")
+                "battleId": documentId
+            ]) { error in
+                if let error = error {
+                    self?.showErrorAlert(error)
+                    return
+                }
+                
+                // Davet eden kullanıcıya bildirim gönder ve ayarlar ekranına yönlendir
+                let battleInvitationVC = BattleInvitationViewController(battleId: documentId, opponentId: currentUserId)
+                self?.navigationController?.pushViewController(battleInvitationVC, animated: true)
+            }
         }
     }
     
@@ -503,16 +536,6 @@ class OnlineBattleViewController: UIViewController {
         db.collection("battleInvitations").document(invitationId).updateData([
             "status": "rejected"
         ])
-    }
-    
-    private func notifyInviter(userId: String, status: String) {
-        // Burada davet eden kullanıcıya bildirim gönderebilirsiniz
-        // Örneğin: Push notification veya in-app notification
-        if status == "accepted" {
-            // Davet eden kullanıcıyı BattleInvitationViewController'a yönlendir
-            let battleInvitationVC = BattleInvitationViewController(battleId: currentBattleId ?? "", opponentId: userId)
-            navigationController?.pushViewController(battleInvitationVC, animated: true)
-        }
     }
 }
 

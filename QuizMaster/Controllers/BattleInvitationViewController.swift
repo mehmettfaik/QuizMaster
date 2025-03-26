@@ -55,6 +55,13 @@ class BattleInvitationViewController: UIViewController {
         return button
     }()
     
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.color = .primaryPurple
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
+    
     // MARK: - Initialization
     init(battleId: String, opponentId: String) {
         self.battleId = battleId
@@ -71,6 +78,32 @@ class BattleInvitationViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupActions()
+        
+        // Varsayılan değerleri ayarla
+        categoryChanged(categorySegmentedControl)
+        difficultyChanged(difficultySegmentedControl)
+        
+        // Battle durumunu dinle
+        observeBattleStatus()
+    }
+    
+    private func observeBattleStatus() {
+        db.collection("battles").document(battleId)
+            .addSnapshotListener { [weak self] snapshot, error in
+                if let error = error {
+                    self?.showErrorAlert(error)
+                    return
+                }
+                
+                guard let data = snapshot?.data(),
+                      let status = data["status"] as? String else { return }
+                
+                if status == "active" {
+                    // Yarışma aktif olduğunda QuizBattle ekranına geç
+                    let quizBattleVC = QuizBattleViewController(battleId: self?.battleId ?? "")
+                    self?.navigationController?.pushViewController(quizBattleVC, animated: true)
+                }
+            }
     }
     
     // MARK: - Setup
@@ -78,6 +111,7 @@ class BattleInvitationViewController: UIViewController {
         view.backgroundColor = .systemBackground
         
         view.addSubview(containerStackView)
+        view.addSubview(loadingIndicator)
         
         let categoryLabel = UILabel()
         categoryLabel.text = "Kategori Seçin"
@@ -102,8 +136,13 @@ class BattleInvitationViewController: UIViewController {
             containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
-            startButton.heightAnchor.constraint(equalToConstant: 50)
+            startButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
+        
+        loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
     }
     
     private func setupActions() {
@@ -127,19 +166,45 @@ class BattleInvitationViewController: UIViewController {
         guard let category = selectedCategory,
               let difficulty = selectedDifficulty else { return }
         
-        // Yarışma ayarlarını güncelle
-        db.collection("battles").document(battleId).updateData([
-            "category": category,
-            "difficulty": difficulty,
-            "status": "active"
-        ]) { [weak self] error in
-            if let error = error {
-                self?.showErrorAlert(error)
-            } else {
-                // QuizBattle ekranına geç
-                let quizBattleVC = QuizBattleViewController(battleId: self?.battleId ?? "")
-                self?.navigationController?.pushViewController(quizBattleVC, animated: true)
+        startButton.isEnabled = false
+        loadingIndicator.startAnimating()
+        
+        // Soruları getir
+        db.collection("quizzes")
+            .whereField("category", isEqualTo: category)
+            .whereField("difficulty", isEqualTo: difficulty)
+            .limit(to: 5)
+            .getDocuments { [weak self] snapshot, error in
+                if let error = error {
+                    self?.showErrorAlert(error)
+                    self?.startButton.isEnabled = true
+                    self?.loadingIndicator.stopAnimating()
+                    return
+                }
+                
+                guard let documents = snapshot?.documents else {
+                    self?.showErrorAlert(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Soru bulunamadı"]))
+                    self?.startButton.isEnabled = true
+                    self?.loadingIndicator.stopAnimating()
+                    return
+                }
+                
+                let questions = documents.map { $0.data() }
+                
+                // Yarışma ayarlarını güncelle
+                self?.db.collection("battles").document(self?.battleId ?? "").updateData([
+                    "category": category,
+                    "difficulty": difficulty,
+                    "questions": questions,
+                    "status": "active"
+                ]) { error in
+                    self?.startButton.isEnabled = true
+                    self?.loadingIndicator.stopAnimating()
+                    
+                    if let error = error {
+                        self?.showErrorAlert(error)
+                    }
+                }
             }
-        }
     }
 } 

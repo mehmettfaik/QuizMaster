@@ -45,6 +45,7 @@ class BattleResultsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupCloseButton()
         fetchResults()
     }
     
@@ -75,6 +76,32 @@ class BattleResultsViewController: UIViewController {
             playAgainButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             playAgainButton.heightAnchor.constraint(equalToConstant: 50)
         ])
+    }
+    
+    private func setupCloseButton() {
+        let closeButton = UIBarButtonItem(image: UIImage(systemName: "xmark"),
+                                        style: .plain,
+                                        target: self,
+                                        action: #selector(closeButtonTapped))
+        closeButton.tintColor = .systemRed
+        navigationItem.leftBarButtonItem = closeButton
+    }
+    
+    @objc private func closeButtonTapped() {
+        let alert = UIAlertController(
+            title: "Sonuçlardan Çık",
+            message: "Sonuç ekranından çıkmak istediğinize emin misiniz?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Hayır", style: .cancel))
+        
+        alert.addAction(UIAlertAction(title: "Evet", style: .destructive) { [weak self] _ in
+            // Ana sayfaya dön
+            self?.navigationController?.popToRootViewController(animated: true)
+        })
+        
+        present(alert, animated: true)
     }
     
     private func fetchResults() {

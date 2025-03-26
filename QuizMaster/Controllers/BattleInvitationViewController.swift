@@ -106,6 +106,7 @@ class BattleInvitationViewController: UIViewController {
         setupUI()
         setupPickerView()
         setupActions()
+        setupCloseButton()
         fetchCategories()
         
         if !isCreator {
@@ -177,6 +178,15 @@ class BattleInvitationViewController: UIViewController {
         startButton.addTarget(self, action: #selector(startButtonTapped), for: .touchUpInside)
     }
     
+    private func setupCloseButton() {
+        let closeButton = UIBarButtonItem(image: UIImage(systemName: "xmark"),
+                                        style: .plain,
+                                        target: self,
+                                        action: #selector(closeButtonTapped))
+        closeButton.tintColor = .systemRed
+        navigationItem.leftBarButtonItem = closeButton
+    }
+    
     private func fetchCategories() {
         FirebaseService.shared.getQuizCategories { [weak self] result in
             switch result {
@@ -199,7 +209,6 @@ class BattleInvitationViewController: UIViewController {
         
         print("Observing battle status for battle ID: \(battleId)")
         
-        // Remove any existing listeners before adding a new one
         db.collection("battles").document(battleId)
             .addSnapshotListener { [weak self] snapshot, error in
                 if let error = error {
@@ -221,7 +230,7 @@ class BattleInvitationViewController: UIViewController {
                                                                        difficulty: difficulty,
                                                                        battleId: self?.battleId ?? "",
                                                                        opponentId: self?.opponentId ?? "")
-                            self?.navigationController?.setViewControllers([quizBattleVC], animated: true)
+                            self?.navigationController?.pushViewController(quizBattleVC, animated: true)
                         }
                     }
                 }
@@ -233,7 +242,7 @@ class BattleInvitationViewController: UIViewController {
         let difficulties = ["easy", "medium", "hard"]
         let selectedDifficulty = difficulties[difficultySegmentedControl.selectedSegmentIndex]
         
-        print("Starting battle with category: \(selectedCategory), difficulty: \(selectedDifficulty)")
+        print("Starting battle with category: \(selectedCategory), difficulty: \(selectedDifficulty)") // Debug için
         
         db.collection("battles").document(battleId).updateData([
             "status": "started",
@@ -250,9 +259,34 @@ class BattleInvitationViewController: UIViewController {
                                                            difficulty: selectedDifficulty,
                                                            battleId: self?.battleId ?? "",
                                                            opponentId: self?.opponentId ?? "")
-                self?.navigationController?.setViewControllers([quizBattleVC], animated: true)
+                self?.navigationController?.pushViewController(quizBattleVC, animated: true)
             }
         }
+    }
+    
+    @objc private func closeButtonTapped() {
+        let alert = UIAlertController(
+            title: "Yarışmadan Çık",
+            message: "Yarışmadan çıkmak istediğinize emin misiniz?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Hayır", style: .cancel))
+        
+        alert.addAction(UIAlertAction(title: "Evet", style: .destructive) { [weak self] _ in
+            // Battles koleksiyonundan yarışmayı sil
+            guard let battleId = self?.battleId else { return }
+            self?.db.collection("battles").document(battleId).delete { error in
+                if let error = error {
+                    print("Error deleting battle: \(error)")
+                }
+            }
+            
+            // Ana sayfaya dön
+            self?.navigationController?.popToRootViewController(animated: true)
+        })
+        
+        present(alert, animated: true)
     }
 }
 

@@ -43,7 +43,6 @@ class QuizBattleViewController: UIViewController {
         label.textAlignment = .center
         label.numberOfLines = 0
         label.font = .systemFont(ofSize: 18, weight: .medium)
-        label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
@@ -51,36 +50,23 @@ class QuizBattleViewController: UIViewController {
         let label = UILabel()
         label.textAlignment = .center
         label.font = .systemFont(ofSize: 24, weight: .bold)
-        label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
     private lazy var scoreLabel: UILabel = {
         let label = UILabel()
         label.textAlignment = .center
-        label.font = .systemFont(ofSize: 18, weight: .medium)
+        label.font = .systemFont(ofSize: 18)
         label.text = "Skor: 0"
-        label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
     private lazy var answerStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
-        stack.spacing = 12
+        stack.spacing = 10
         stack.distribution = .fillEqually
-        stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
-    }()
-    
-    private lazy var questionContainerView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .systemBackground
-        view.layer.cornerRadius = 10
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.systemGray4.cgColor
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
     }()
     
     // MARK: - Initialization
@@ -101,6 +87,7 @@ class QuizBattleViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupCollectionView()
+        setupCloseButton()
         fetchQuestions()
         observePlayers()
     }
@@ -117,13 +104,10 @@ class QuizBattleViewController: UIViewController {
         
         view.addSubview(containerStackView)
         
-        // Soru container'ını hazırla
-        questionContainerView.addSubview(questionLabel)
-        
         containerStackView.addArrangedSubview(playersCollectionView)
         containerStackView.addArrangedSubview(timerLabel)
         containerStackView.addArrangedSubview(scoreLabel)
-        containerStackView.addArrangedSubview(questionContainerView)
+        containerStackView.addArrangedSubview(questionLabel)
         containerStackView.addArrangedSubview(answerStackView)
         
         NSLayoutConstraint.activate([
@@ -132,21 +116,8 @@ class QuizBattleViewController: UIViewController {
             containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             containerStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
             
-            playersCollectionView.heightAnchor.constraint(equalToConstant: 80),
-            
-            questionLabel.topAnchor.constraint(equalTo: questionContainerView.topAnchor, constant: 16),
-            questionLabel.leadingAnchor.constraint(equalTo: questionContainerView.leadingAnchor, constant: 16),
-            questionLabel.trailingAnchor.constraint(equalTo: questionContainerView.trailingAnchor, constant: -16),
-            questionLabel.bottomAnchor.constraint(equalTo: questionContainerView.bottomAnchor, constant: -16),
-            
-            questionContainerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 100)
+            playersCollectionView.heightAnchor.constraint(equalToConstant: 80)
         ])
-        
-        // Stack view spacing'i ayarla
-        containerStackView.setCustomSpacing(24, after: playersCollectionView)
-        containerStackView.setCustomSpacing(16, after: timerLabel)
-        containerStackView.setCustomSpacing(24, after: scoreLabel)
-        containerStackView.setCustomSpacing(24, after: questionContainerView)
     }
     
     private func setupCollectionView() {
@@ -155,41 +126,61 @@ class QuizBattleViewController: UIViewController {
         playersCollectionView.register(PlayerCell.self, forCellWithReuseIdentifier: "PlayerCell")
     }
     
+    private func setupCloseButton() {
+        let closeButton = UIBarButtonItem(image: UIImage(systemName: "xmark"),
+                                        style: .plain,
+                                        target: self,
+                                        action: #selector(closeButtonTapped))
+        closeButton.tintColor = .systemRed
+        navigationItem.leftBarButtonItem = closeButton
+    }
+    
+    @objc private func closeButtonTapped() {
+        let alert = UIAlertController(
+            title: "Yarışmadan Çık",
+            message: "Yarışmadan çıkmak istediğinize emin misiniz?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Hayır", style: .cancel))
+        
+        alert.addAction(UIAlertAction(title: "Evet", style: .destructive) { [weak self] _ in
+            // Yarışmayı sonlandır ve skoru güncelle
+            self?.timer?.invalidate()
+            self?.updateScore()
+            
+            // Battles koleksiyonunda status'ü güncelle
+            guard let battleId = self?.battleId else { return }
+            self?.db.collection("battles").document(battleId).updateData([
+                "status": "ended"
+            ]) { error in
+                if let error = error {
+                    print("Error updating battle status: \(error)")
+                }
+            }
+            
+            // Ana sayfaya dön
+            self?.navigationController?.popToRootViewController(animated: true)
+        })
+        
+        present(alert, animated: true)
+    }
+    
     // MARK: - Game Logic
     private func fetchQuestions() {
-        // Format category name for Firestore path - camelCase
-        let formattedCategory = category.components(separatedBy: " ")
-            .enumerated()
-            .map { index, word in
-                if index == 0 {
-                    return word.lowercased()
-                }
-                return word.prefix(1).uppercased() + word.dropFirst().lowercased()
-            }
-            .joined()
-        
-        print("📝 Loading questions for:")
-        print("   Category: \(self.category)")
-        print("   Formatted Category (camelCase): \(formattedCategory)")
-        print("   Difficulty: \(self.difficulty)")
-        
         // Firestore'dan soruları getir
-        db.collection("aaaa")
-            .document(formattedCategory)
-            .collection("questions")
-            .whereField("difficulty", isEqualTo: self.difficulty.lowercased())
+        db.collection("quizzes")
+            .whereField("category", isEqualTo: category)
+            .whereField("difficulty", isEqualTo: difficulty)
+            .limit(to: 5)
             .getDocuments { [weak self] snapshot, error in
                 if let error = error {
                     print("Error fetching questions: \(error)")
                     return
                 }
                 
-                guard let documents = snapshot?.documents else {
-                    print("No questions found for category: \(self?.category ?? "") and difficulty: \(self?.difficulty ?? "")")
-                    return
-                }
+                guard let documents = snapshot?.documents else { return }
                 
-                print("Found \(documents.count) questions")
                 self?.questions = documents.map { $0.data() }
                 self?.startQuiz()
             }
@@ -213,30 +204,19 @@ class QuizBattleViewController: UIViewController {
     private func updateUI() {
         guard let question = currentQuestion else { return }
         
-        // Soru metnini ayarla
-        if let questionText = question["question"] as? String {
-            questionLabel.text = questionText
-        }
+        questionLabel.text = question["question"] as? String
         
         // Mevcut cevap butonlarını temizle
         answerStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         
-        // Cevapları al ve karıştır
+        // Cevapları karıştır
         var answers = [(String, Bool)]()
-        
-        // Doğru cevabı ekle
         if let correctAnswer = question["correct_answer"] as? String {
             answers.append((correctAnswer, true))
         }
-        
-        // Yanlış cevapları ekle
-        if let options = question["options"] as? [String] {
-            // Doğru cevabı çıkar ve kalanları yanlış cevap olarak ekle
-            let incorrectAnswers = options.filter { $0 != question["correct_answer"] as? String }
+        if let incorrectAnswers = question["incorrect_answers"] as? [String] {
             answers.append(contentsOf: incorrectAnswers.map { ($0, false) })
         }
-        
-        // Cevapları karıştır
         answers.shuffle()
         
         // Cevap butonlarını oluştur
@@ -247,24 +227,12 @@ class QuizBattleViewController: UIViewController {
             button.setTitleColor(.white, for: .normal)
             button.layer.cornerRadius = 10
             button.tag = isCorrect ? 1 : 0
-            button.titleLabel?.numberOfLines = 0 // Çok satırlı cevaplar için
-            button.titleLabel?.textAlignment = .center
-            button.contentEdgeInsets = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
             button.addTarget(self, action: #selector(answerButtonTapped(_:)), for: .touchUpInside)
             answerStackView.addArrangedSubview(button)
             
-            // Button height constraint - minimum 50, ama içerik daha uzunsa ona göre ayarlanır
-            let heightConstraint = button.heightAnchor.constraint(greaterThanOrEqualToConstant: 50)
-            heightConstraint.isActive = true
+            // Button height constraint
+            button.heightAnchor.constraint(equalToConstant: 50).isActive = true
         }
-        
-        // UI bileşenlerinin görünümünü güncelle
-        questionLabel.font = .systemFont(ofSize: 18, weight: .medium)
-        questionLabel.textAlignment = .center
-        questionLabel.numberOfLines = 0
-        
-        // Score label'ı güncelle
-        scoreLabel.text = "Skor: \(score)"
     }
     
     private func startTimer() {

@@ -24,13 +24,21 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.window = window
         
         // Kullanıcının giriş durumunu kontrol et
-        if Auth.auth().currentUser != nil {
-            // Kullanıcı giriş yapmışsa TabBarController'ı göster
+        if let currentUser = Auth.auth().currentUser {
+            // Kullanıcı giriş yapmışsa, dil ayarını yükle
+            db.collection("users").document(currentUser.uid).getDocument { snapshot, error in
+                if let data = snapshot?.data(),
+                   let language = data["language"] as? String {
+                    LanguageManager.shared.currentLanguage = language
+                }
+            }
+            
+            // TabBarController'ı göster
             window.rootViewController = MainTabBarController()
             updateUserOnlineStatus(isOnline: true)
         } else {
-            // Kullanıcı giriş yapmamışsa LoginViewController'ı göster
-            window.rootViewController = LoginViewController()
+            // Kullanıcı giriş yapmamışsa WelcomeViewController'ı göster
+            window.rootViewController = WelcomeViewController()
         }
         
         window.makeKeyAndVisible()
@@ -77,6 +85,38 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             if let error = error {
                 print("Error updating online status: \(error.localizedDescription)")
             }
+        }
+    }
+
+    func resetRootViewController() {
+        guard let window = self.window else { return }
+        
+        // Kullanıcının giriş durumunu kontrol et
+        if let currentUser = Auth.auth().currentUser {
+            // Kullanıcı giriş yapmışsa TabBarController'ı göster
+            let mainTabBarController = MainTabBarController()
+            
+            // Animasyonlu geçiş efekti
+            UIView.transition(with: window,
+                             duration: 0.3,
+                             options: .transitionCrossDissolve,
+                             animations: {
+                window.rootViewController = mainTabBarController
+            }, completion: nil)
+            
+            // Online durumunu güncelle
+            updateUserOnlineStatus(isOnline: true)
+        } else {
+            // Kullanıcı giriş yapmamışsa WelcomeViewController'ı göster
+            let welcomeViewController = WelcomeViewController()
+            
+            // Animasyonlu geçiş efekti
+            UIView.transition(with: window,
+                             duration: 0.3,
+                             options: .transitionCrossDissolve,
+                             animations: {
+                window.rootViewController = welcomeViewController
+            }, completion: nil)
         }
     }
 }
@@ -179,11 +219,35 @@ class MainTabBarController: UITabBarController {
         
         let profileNav = UINavigationController(rootViewController: profileVC)
         
-        homeVC.tabBarItem = UITabBarItem(title: "Ana Sayfa", image: UIImage(systemName: "house"), selectedImage: UIImage(systemName: "house.fill"))
-        searchVC.tabBarItem = UITabBarItem(title: "Keşfet", image: UIImage(systemName: "magnifyingglass"), selectedImage: UIImage(systemName: "magnifyingglass"))
-        createVC.tabBarItem = UITabBarItem(title: "", image: nil, selectedImage: nil)
-        statsVC.tabBarItem = UITabBarItem(title: "İstatistik", image: UIImage(systemName: "chart.bar"), selectedImage: UIImage(systemName: "chart.bar.fill"))
-        profileNav.tabBarItem = UITabBarItem(title: "Profil", image: UIImage(systemName: "person"), selectedImage: UIImage(systemName: "person.fill"))
+        homeVC.tabBarItem = UITabBarItem(
+            title: LanguageManager.shared.localizedString(for: "tab_home"),
+            image: UIImage(systemName: "house"),
+            selectedImage: UIImage(systemName: "house.fill")
+        )
+        
+        searchVC.tabBarItem = UITabBarItem(
+            title: LanguageManager.shared.localizedString(for: "tab_explore"),
+            image: UIImage(systemName: "magnifyingglass"),
+            selectedImage: UIImage(systemName: "magnifyingglass")
+        )
+        
+        createVC.tabBarItem = UITabBarItem(
+            title: "",
+            image: nil,
+            selectedImage: nil
+        )
+        
+        statsVC.tabBarItem = UITabBarItem(
+            title: LanguageManager.shared.localizedString(for: "tab_statistics"),
+            image: UIImage(systemName: "chart.bar"),
+            selectedImage: UIImage(systemName: "chart.bar.fill")
+        )
+        
+        profileNav.tabBarItem = UITabBarItem(
+            title: LanguageManager.shared.localizedString(for: "tab_profile"),
+            image: UIImage(systemName: "person"),
+            selectedImage: UIImage(systemName: "person.fill")
+        )
         
         setViewControllers([homeVC, searchVC, createVC, statsVC, profileNav], animated: false)
     }

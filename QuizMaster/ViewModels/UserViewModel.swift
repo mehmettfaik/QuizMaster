@@ -185,9 +185,9 @@ class UserViewModel: ObservableObject {
             // Points Badges
             AchievementBadge(
                 id: "points_100",
-                title: "Çaylak",
-                description: "100 puan topla",
-                icon: "star.circle.fill",
+                title: LanguageManager.shared.localizedString(for: "rookie"),
+                description: LanguageManager.shared.localizedString(for: "collect_100_points"),
+                icon: "medal.fill",
                 isUnlocked: totalPoints >= 100,
                 progress: min(Double(totalPoints) / 100.0, 1.0),
                 requirement: 100,
@@ -195,9 +195,9 @@ class UserViewModel: ObservableObject {
             ),
             AchievementBadge(
                 id: "points_500",
-                title: "Uzman",
-                description: "500 puan topla",
-                icon: "star.circle.fill",
+                title: LanguageManager.shared.localizedString(for: "expert"),
+                description: LanguageManager.shared.localizedString(for: "collect_500_points"),
+                icon: "bolt.circle.fill",
                 isUnlocked: totalPoints >= 500,
                 progress: min(Double(totalPoints) / 500.0, 1.0),
                 requirement: 500,
@@ -205,8 +205,8 @@ class UserViewModel: ObservableObject {
             ),
             AchievementBadge(
                 id: "points_1000",
-                title: "Efsane",
-                description: "1000 puan topla",
+                title: LanguageManager.shared.localizedString(for: "legend"),
+                description: LanguageManager.shared.localizedString(for: "collect_1000_points"),
                 icon: "star.square.fill",
                 isUnlocked: totalPoints >= 1000,
                 progress: min(Double(totalPoints) / 1000.0, 1.0),
@@ -217,9 +217,9 @@ class UserViewModel: ObservableObject {
             // Quiz Count Badges
             AchievementBadge(
                 id: "quiz_5",
-                title: "Quiz Sever",
-                description: "5 quiz tamamla",
-                icon: "questionmark.circle.fill",
+                title: LanguageManager.shared.localizedString(for: "quiz_lover"),
+                description: LanguageManager.shared.localizedString(for: "complete_5_quizzes"),
+                icon: "checkmark.circle.fill",
                 isUnlocked: quizzesPlayed >= 5,
                 progress: min(Double(quizzesPlayed) / 5.0, 1.0),
                 requirement: 5,
@@ -227,20 +227,20 @@ class UserViewModel: ObservableObject {
             ),
             AchievementBadge(
                 id: "quiz_20",
-                title: "Quiz Ustası",
-                description: "20 quiz tamamla",
-                icon: "questionmark.square.fill",
+                title: LanguageManager.shared.localizedString(for: "quiz_pro"),
+                description: LanguageManager.shared.localizedString(for: "complete_20_quizzes"),
+                icon: "trophy.fill",
                 isUnlocked: quizzesPlayed >= 20,
                 progress: min(Double(quizzesPlayed) / 20.0, 1.0),
                 requirement: 20,
                 currentValue: quizzesPlayed
             ),
             
-            // Rank Badges
+            // Rank Badge
             AchievementBadge(
                 id: "rank_top_10",
-                title: "Elit",
-                description: "İlk 10'a gir",
+                title: LanguageManager.shared.localizedString(for: "elite"),
+                description: LanguageManager.shared.localizedString(for: "reach_top_10"),
                 icon: "crown.fill",
                 isUnlocked: worldRank <= 10,
                 progress: worldRank <= 10 ? 1.0 : 0.0,
@@ -354,6 +354,8 @@ class UserViewModel: ObservableObject {
         userRef.updateData(["language": language]) { [weak self] error in
             if error == nil {
                 self?.language = language
+                // Dil değişikliğini LanguageManager'a bildir
+                LanguageManager.shared.currentLanguage = language
             }
             completion(error)
         }

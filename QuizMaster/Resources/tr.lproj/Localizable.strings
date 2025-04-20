@@ -1,0 +1,203 @@
+// Common
+"settings" = "Ayarlar";
+"language" = "Dil";
+"english" = "İngilizce";
+"turkish" = "Türkçe";
+"cancel" = "İptal";
+"close" = "Kapat";
+"save" = "Kaydet";
+"ok" = "Tamam";
+"success" = "Başarılı";
+"error" = "Hata";
+"delete" = "Sil";
+"change" = "Değiştir";
+"accept" = "Kabul Et";
+"decline" = "Reddet";
+
+// Navigation
+"profile" = "Profil";
+"appearance" = "Görünüm";
+"notifications" = "Bildirimler";
+"account" = "Hesap";
+
+// Home
+"good_morning" = "GÜNAYDIN ☀️";
+"good_afternoon" = "İYİ GÜNLER ⛅️";
+"good_evening" = "İYİ AKŞAMLAR 🌅";
+"good_night" = "İYİ GECELER 🌙";
+"quiz_categories" = "Quiz Kategorileri";
+"ask_ai" = "QuizGPT sor";
+"ai_description" = "Yapay zekamız her şeyi biliyor, yine de şansınızı denemelisiniz!";
+
+// Categories
+"vehicle" = "Vehicle";
+"science" = "Science";
+"sports" = "Sports";
+"history" = "History";
+"art" = "Art";
+"celebrity" = "Celebrity";
+"video_games" = "Video Games";
+"general_culture" = "General Culture";
+"animals" = "Animals";
+"computer_science" = "Computer Science";
+"mathematics" = "Mathematics";
+"mythology" = "Mythology";
+"other" = "Other";
+
+// Stats
+"statistics" = "İstatistikler";
+"leaderboard" = "Liderlik Tablosu";
+"points" = "Puan";
+"quizzes" = "QUIZ SAYISI";
+"world_rank" = "DÜNYA SIRASI";
+"this_week" = "Bu Hafta";
+"this_month" = "Bu Ay";
+"all_time" = "Tüm Zamanlar";
+"success_rates" = "Başarı Oranları (%)";
+"details" = "Detaylar";
+"correct" = "Doğru";
+"wrong" = "Yanlış";
+"score" = "Puan";
+"stats_warning" = "Lütfen istatistik verilerinin görünmesi için bir quiz çözün";
+
+// Search
+"search" = "Ara...";
+"categories" = "Kategoriler";
+"favorites" = "Favoriler";
+"top_quiz" = "En İyi Quiz";
+"no_results" = "Sonuç Bulunamadı";
+
+// Add Question
+"add_new_question" = "Yeni Soru Ekle";
+"category" = "Kategori";
+"difficulty" = "Zorluk";
+"easy" = "Easy";
+"medium" = "Medium";
+"hard" = "Hard";
+"question" = "Soru";
+"options" = "Seçenekler";
+"option" = "Seçenek";
+"save_question" = "Soruyu Kaydet";
+"saving" = "Kaydediliyor...";
+"fill_all_fields" = "Lütfen tüm alanları doldurun";
+"fill_all_options" = "Lütfen tüm seçenekleri doldurun";
+"select_correct_answer" = "Lütfen doğru cevabı seçin";
+"question_added_successfully" = "Soru başarıyla eklendi";
+
+// Difficulty
+"choose_challenge" = "Zorluk seviyenizi seçin";
+"perfect_for_beginners" = "Yeni başlayanlar için ideal";
+"for_experienced" = "Deneyimli oyuncular için";
+"test_expertise" = "Uzmanlığınızı test edin";
+
+// Settings
+"change_avatar" = "Avatarımı Değiştir";
+"change_name" = "İsmi Değiştir";
+"theme" = "Tema";
+"quiz_reminders" = "Quiz Hatırlatmaları";
+"special_offers" = "Özel Teklifler";
+"change_password" = "Şifre Değiştir";
+"delete_account" = "Hesabı Sil";
+"logout" = "Çıkış Yap";
+"select_avatar" = "Avatar Seç";
+"select_character" = "Karakterini seç";
+"enter_new_name" = "Yeni isminizi girin";
+"new_name" = "Yeni isminiz";
+"select_theme" = "Tema Seçin";
+"light_theme" = "Açık Tema";
+"dark_theme" = "Koyu Tema";
+"system_theme" = "Sistem";
+"avatar_updated" = "Avatarınız başarıyla güncellendi.";
+"name_updated" = "İsminiz başarıyla güncellendi.";
+"current_password" = "Mevcut şifre";
+"new_password" = "Yeni şifre";
+"confirm_new_password" = "Yeni şifreyi tekrar giriniz";
+"enter_new_password" = "Yeni şifreyi giriniz";
+
+"password_fields_error" = "Lütfen tüm alanları doldurun ve şifrelerin eşleştiğinden emin olun.";
+"password_updated" = "Şifreniz başarıyla güncellendi.";
+"enter_password" = "Şifrenizi girin";
+"delete_account_confirmation" = "Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!";
+"logout_confirmation" = "Çıkış yapmak istediğinize emin misiniz?";
+"quiz_reminders_settings_message" = "Sınav hatırlatıcılarını etkinleştirme/devre dışı bırakma ayarlarına yönlendirileceksiniz.";
+"special_offers_settings_message" = "Özel teklif bildirimlerini etkinleştirme/devre dışı bırakma ayarlarına yönlendirileceksiniz.";
+"go_to_settings" = "Ayarlara git";
+
+
+// Auth
+"login" = "Giriş Yap";
+"signup" = "Kayıt Ol";
+"email" = "E-posta";
+"password" = "Şifre";
+"password_6_characters" = "Şifre en az 6 karakter olmalıdır";
+
+// Profile
+"edit_profile" = "Profili Düzenle";
+"my_friends" = "Arkadaşlarım";
+"achievements" = "Başarı Rozetleri";
+"no_badges_yet" =  "Henüz Rozet Yok";
+"earn_badges_message" = "Rozet kazanmak için sınavları çözün!";
+"rookie" = "Çaylak";
+"expert" = "Uzman";
+"legend" = "Efsane";
+"quiz_lover" = "Quiz Sever";
+"quiz_pro" = "Quiz Ustası";
+"elite" = "Elit";
+
+// Game
+"game_invitation" = "Oyun Davetiyesi";
+"game_invitation_message" = "%@ sizi bir bilgi yarışması oyunu oynamaya davet etti!";
+
+// Quiz
+"start_quiz" = "Sınava Başla";
+"next_question" = "Sonraki Soru";
+"finish_quiz" = "Sınavı Bitir";
+"your_score" = "Puanınız";
+
+
+// FriendProfil
+"collect_100_points" = "100 Puan Topla";
+"collect_500_points" = "500 Puan Topla";
+"collect_1000_points" = "1000 Puan Topla";
+"complete_5_quizzes" = "5 Quiz Tamamla";
+"complete_20_quizzes" = "20 Quiz Tamamla";
+"reach_top_10" = "İlk 10'a Gir";
+"point" = "Puan";
+"achievement_progress" = "İlerleme";
+
+
+
+// Online
+"online_users" = "Online Kullanıcılar";
+"friend_warning" = "Şu anda uygulamadaki hiçbir kullanıcı çevrimiçi değil!";
+"online_button" = "Çevrimiçi";
+
+
+// FriendView
+"add_friend" = "Arkadaş Ekle";
+"friend_requests" = "Arkadaşlık İstekleri";
+"search_by_email" = "Email ile ara... ";
+"no_results_yet" = "Henüz bir sonuç yok";
+"no_friends_yet" = "Henüz arkadaşınız yok";
+
+"error_title" = "Hata";
+"success_title" = "Başarılı";
+"ok_button" = "Tamam";
+"cancel_button" = "İptal";
+"send_button" = "Gönder";
+"friend_request" = "Arkadaşlık İsteği";
+"cant_send_request_to_self" = "Kendinize arkadaşlık isteği gönderemezsiniz.";
+"friend_request_sent_success" = "Arkadaşlık isteği gönderildi.";
+"send_friend_request_confirmation" = "%@ kullanıcısına arkadaşlık isteği göndermek istiyor musunuz?";
+"no_search_results_found" = "Arama Sonucu Bulunamadı";
+"no_pending_requests_found" = "Bekleyen İstek Bulunmuyor";
+
+
+"tab_home" = "Ana Sayfa";
+"tab_explore" = "Keşfet";
+"tab_statistics" = "İstatistik";
+"tab_profile" = "Profil";
+
+
+
+

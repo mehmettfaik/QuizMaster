@@ -33,7 +33,7 @@ class AddQuestionViewController: UIViewController {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "Add New Question"
+        label.text = LanguageManager.shared.localizedString(for: "add_new_question")
         label.font = .systemFont(ofSize: 24, weight: .bold)
         label.textColor = .white
         label.textAlignment = .center
@@ -52,7 +52,7 @@ class AddQuestionViewController: UIViewController {
     
     private let categoryLabel: UILabel = {
         let label = UILabel()
-        label.text = "Category"
+        label.text = LanguageManager.shared.localizedString(for: "category")
         label.font = .systemFont(ofSize: 16, weight: .medium)
         label.textColor = .black
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -67,7 +67,7 @@ class AddQuestionViewController: UIViewController {
     
     private let difficultyLabel: UILabel = {
         let label = UILabel()
-        label.text = "Difficulty"
+        label.text = LanguageManager.shared.localizedString(for: "difficulty")
         label.font = .systemFont(ofSize: 16, weight: .medium)
         label.textColor = .black
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -75,7 +75,11 @@ class AddQuestionViewController: UIViewController {
     }()
     
     private let difficultySegmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: ["Easy", "Medium", "Hard"])
+        let control = UISegmentedControl(items: [
+            LanguageManager.shared.localizedString(for: "easy"),
+            LanguageManager.shared.localizedString(for: "medium"),
+            LanguageManager.shared.localizedString(for: "hard")
+        ])
         control.selectedSegmentIndex = 0
         control.selectedSegmentTintColor = .primaryPurple
         let titleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.white]
@@ -86,7 +90,7 @@ class AddQuestionViewController: UIViewController {
     
     private let questionLabel: UILabel = {
         let label = UILabel()
-        label.text = "Question"
+        label.text = LanguageManager.shared.localizedString(for: "question")
         label.font = .systemFont(ofSize: 16, weight: .medium)
         label.textColor = .black
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -106,7 +110,7 @@ class AddQuestionViewController: UIViewController {
     
     private let optionsLabel: UILabel = {
         let label = UILabel()
-        label.text = "Options"
+        label.text = LanguageManager.shared.localizedString(for: "options")
         label.font = .systemFont(ofSize: 16, weight: .medium)
         label.textColor = .black
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -123,7 +127,7 @@ class AddQuestionViewController: UIViewController {
     
     private let saveButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Save Question", for: .normal)
+        button.setTitle(LanguageManager.shared.localizedString(for: "save_question"), for: .normal)
         button.backgroundColor = .primaryPurple
         button.setTitleColor(.white, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
@@ -150,7 +154,7 @@ class AddQuestionViewController: UIViewController {
         
         init(index: Int) {
             textField = UITextField()
-            textField.placeholder = "Option \(index + 1)"
+            textField.placeholder = "\(LanguageManager.shared.localizedString(for: "option")) \(index + 1)"
             textField.borderStyle = .none
             textField.backgroundColor = .systemGray6
             textField.layer.cornerRadius = 12
@@ -341,31 +345,31 @@ class AddQuestionViewController: UIViewController {
     @objc private func saveButtonTapped() {
         // Show loading state
         saveButton.isEnabled = false
-        saveButton.setTitle("Saving...", for: .normal)
+        saveButton.setTitle(LanguageManager.shared.localizedString(for: "saving"), for: .normal)
         
         // Validate inputs
         guard let question = questionTextView.text, !question.isEmpty,
               let selectedCategory = categories[safe: categoryPicker.selectedRow(inComponent: 0)]?.rawValue else {
-            presentAlert(title: "Error", message: "Please fill in all fields")
+            presentAlert(title: "error", message: LanguageManager.shared.localizedString(for: "fill_all_fields"))
             saveButton.isEnabled = true
-            saveButton.setTitle("Save Question", for: .normal)
+            saveButton.setTitle(LanguageManager.shared.localizedString(for: "save_question"), for: .normal)
             return
         }
         
         let options = optionViews.compactMap { $0.textField.text }.filter { !$0.isEmpty }
         guard options.count == 4 else {
-            presentAlert(title: "Error", message: "Please fill in all options")
+            presentAlert(title: "error", message: LanguageManager.shared.localizedString(for: "fill_all_options"))
             saveButton.isEnabled = true
-            saveButton.setTitle("Save Question", for: .normal)
+            saveButton.setTitle(LanguageManager.shared.localizedString(for: "save_question"), for: .normal)
             return
         }
         
         // Get the selected correct answer
         guard let selectedIndex = optionViews.firstIndex(where: { $0.isSelected }),
               let correctAnswer = options[safe: selectedIndex] else {
-            presentAlert(title: "Error", message: "Please select the correct answer")
+            presentAlert(title: "error", message: LanguageManager.shared.localizedString(for: "select_correct_answer"))
             saveButton.isEnabled = true
-            saveButton.setTitle("Save Question", for: .normal)
+            saveButton.setTitle(LanguageManager.shared.localizedString(for: "save_question"), for: .normal)
             return
         }
         
@@ -387,11 +391,11 @@ class AddQuestionViewController: UIViewController {
             .addDocument(data: questionData) { [weak self] error in
                 DispatchQueue.main.async {
                     if let error = error {
-                        self?.presentAlert(title: "Error", message: error.localizedDescription)
+                        self?.presentAlert(title: "error", message: error.localizedDescription)
                         self?.saveButton.isEnabled = true
-                        self?.saveButton.setTitle("Save Question", for: .normal)
+                        self?.saveButton.setTitle(LanguageManager.shared.localizedString(for: "save_question"), for: .normal)
                     } else {
-                        self?.presentAlert(title: "Success", message: "Question added successfully") { _ in
+                        self?.presentAlert(title: "success", message: LanguageManager.shared.localizedString(for: "question_added_successfully")) { _ in
                             if let tabBarController = self?.presentingViewController as? UITabBarController {
                                 // Önce ana sayfaya geç
                                 tabBarController.selectedIndex = 0
@@ -409,8 +413,16 @@ class AddQuestionViewController: UIViewController {
     }
     
     private func presentAlert(title: String, message: String, completion: ((UIAlertAction) -> Void)? = nil) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: completion))
+        let alert = UIAlertController(
+            title: LanguageManager.shared.localizedString(for: title),
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(
+            title: LanguageManager.shared.localizedString(for: "ok"),
+            style: .default,
+            handler: completion
+        ))
         present(alert, animated: true)
     }
 }

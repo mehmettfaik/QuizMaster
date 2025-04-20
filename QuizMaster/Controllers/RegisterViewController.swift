@@ -14,20 +14,33 @@ class RegisterViewController: UIViewController {
         return imageView
     }()
     
-    private let titleLabel: UILabel = {
+    private let welcomeLabel: UILabel = {
         let label = UILabel()
-        label.text = "Quiz Master"
-        label.font = .systemFont(ofSize: 32, weight: .bold)
+        label.text = "Welcome QuizMaster"
         label.textColor = .primaryPurple
+        label.font = .systemFont(ofSize: 28, weight: .bold)
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
+    }()
+    
+    private let backButton: UIButton = {
+        let button = UIButton(type: .system)
+        let backImage = UIImage(systemName: "chevron.left")
+        button.setImage(backImage, for: .normal)
+        button.tintColor = .white
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
     }()
     
     private let nameTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "Ad"
         textField.borderStyle = .roundedRect
+        textField.backgroundColor = .white
+        textField.layer.borderWidth = 1
+        textField.layer.borderColor = UIColor.systemGray4.cgColor
+        textField.layer.cornerRadius = 8
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -36,6 +49,10 @@ class RegisterViewController: UIViewController {
         let textField = UITextField()
         textField.placeholder = "Soyad"
         textField.borderStyle = .roundedRect
+        textField.backgroundColor = .white
+        textField.layer.borderWidth = 1
+        textField.layer.borderColor = UIColor.systemGray4.cgColor
+        textField.layer.cornerRadius = 8
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -44,6 +61,10 @@ class RegisterViewController: UIViewController {
         let textField = UITextField()
         textField.placeholder = "E-posta"
         textField.borderStyle = .roundedRect
+        textField.backgroundColor = .white
+        textField.layer.borderWidth = 1
+        textField.layer.borderColor = UIColor.systemGray4.cgColor
+        textField.layer.cornerRadius = 8
         textField.autocapitalizationType = .none
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
@@ -53,6 +74,10 @@ class RegisterViewController: UIViewController {
         let textField = UITextField()
         textField.placeholder = "Şifre"
         textField.borderStyle = .roundedRect
+        textField.backgroundColor = .white
+        textField.layer.borderWidth = 1
+        textField.layer.borderColor = UIColor.systemGray4.cgColor
+        textField.layer.cornerRadius = 8
         textField.isSecureTextEntry = true
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
@@ -63,34 +88,39 @@ class RegisterViewController: UIViewController {
         button.setTitle("Üye Ol", for: .normal)
         button.backgroundColor = .primaryPurple
         button.setTitleColor(.white, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
         button.layer.cornerRadius = 8
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     
-    private let backButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Giriş Yap", for: .normal)
-        button.backgroundColor = .clear
-        button.setTitleColor(.primaryPurple, for: .normal)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
+
+    private let dividerLabel: UILabel = {
+        let label = UILabel()
+        label.text = "veya"
+        label.textColor = .gray
+        label.font = .systemFont(ofSize: 14)
+        label.textAlignment = .center
+        label.backgroundColor = .white
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
     }()
     
-    private let googleSignInButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Google ile Kayıt Ol", for: .normal)
-        button.setImage(UIImage(named: "google_logo")?.withRenderingMode(.alwaysOriginal), for: .normal)
-        button.backgroundColor = .white
-        button.setTitleColor(.black, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        button.layer.cornerRadius = 8
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.systemGray4.cgColor
-        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -8, bottom: 0, right: 0)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
+    private let leftDividerLine: UIView = {
+        let view = UIView()
+        view.backgroundColor = .gray
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }()
+    
+    private let rightDividerLine: UIView = {
+        let view = UIView()
+        view.backgroundColor = .gray
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    
     
     private let activityIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
@@ -102,34 +132,70 @@ class RegisterViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupWave()
         setupUI()
         setupBindings()
+    }
+    
+    private func setupWave() {
+        let waveLayer = CAShapeLayer()
+        let path = UIBezierPath()
+        let width = view.bounds.width
+        let height: CGFloat = 400
+
+        path.move(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: 0, y: height * 0.7))
+        path.addCurve(to: CGPoint(x: width, y: height * 0.7),
+                      controlPoint1: CGPoint(x: width * 0.3, y: height),
+                      controlPoint2: CGPoint(x: width * 0.7, y: height * 0.4))
+        path.addLine(to: CGPoint(x: width, y: 0))
+        path.close()
+
+        waveLayer.path = path.cgPath
+        waveLayer.fillColor = UIColor.primaryPurple.cgColor
+
+        let waveView = UIView()
+        waveView.layer.addSublayer(waveLayer)
+        waveView.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(waveView)
+
+        NSLayoutConstraint.activate([
+            waveView.topAnchor.constraint(equalTo: view.topAnchor),
+            waveView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            waveView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            waveView.heightAnchor.constraint(equalToConstant: height)
+        ])
     }
     
     private func setupUI() {
         view.backgroundColor = .white
         
         view.addSubview(logoImageView)
-        view.addSubview(titleLabel)
+        view.addSubview(welcomeLabel)
+        view.addSubview(backButton)
         view.addSubview(nameTextField)
         view.addSubview(surnameTextField)
         view.addSubview(emailTextField)
         view.addSubview(passwordTextField)
         view.addSubview(registerButton)
-        view.addSubview(backButton)
-        view.addSubview(googleSignInButton)
         view.addSubview(activityIndicator)
         
         NSLayoutConstraint.activate([
-            logoImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 50),
+            backButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            backButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            backButton.widthAnchor.constraint(equalToConstant: 44),
+            backButton.heightAnchor.constraint(equalToConstant: 44),
+            
+            logoImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             logoImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            logoImageView.widthAnchor.constraint(equalToConstant: 150),
-            logoImageView.heightAnchor.constraint(equalToConstant: 150),
+            logoImageView.widthAnchor.constraint(equalToConstant: 180),
+            logoImageView.heightAnchor.constraint(equalToConstant: 180),
             
-            titleLabel.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: 20),
-            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            welcomeLabel.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: 80),
+            welcomeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
-            nameTextField.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 50),
+            nameTextField.topAnchor.constraint(equalTo: welcomeLabel.bottomAnchor, constant: 40),
             nameTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             nameTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             nameTextField.heightAnchor.constraint(equalToConstant: 50),
@@ -154,13 +220,6 @@ class RegisterViewController: UIViewController {
             registerButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             registerButton.heightAnchor.constraint(equalToConstant: 50),
             
-            backButton.topAnchor.constraint(equalTo: registerButton.bottomAnchor, constant: 20),
-            backButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            
-            googleSignInButton.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 30),
-            googleSignInButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            googleSignInButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            googleSignInButton.heightAnchor.constraint(equalToConstant: 50),
             
             activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
@@ -168,7 +227,6 @@ class RegisterViewController: UIViewController {
         
         registerButton.addTarget(self, action: #selector(registerButtonTapped), for: .touchUpInside)
         backButton.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
-        googleSignInButton.addTarget(self, action: #selector(googleSignInButtonTapped), for: .touchUpInside)
     }
     
     private func setupBindings() {
@@ -216,7 +274,7 @@ class RegisterViewController: UIViewController {
         }
         
         guard viewModel.validatePassword(password) else {
-            showAlert(title: "Error", message: "Password must be at least 6 characters")
+            showAlert(title: "Error", message: LanguageManager.shared.localizedString(for: "password_6_characters"))
             return
         }
         
@@ -224,11 +282,12 @@ class RegisterViewController: UIViewController {
         viewModel.signUp(email: email, password: password, name: fullName)
     }
     
-    @objc private func backButtonTapped() {
-        dismiss(animated: true)
-    }
     
     @objc private func googleSignInButtonTapped() {
         viewModel.signInWithGoogle(presenting: self)
+    }
+    
+    @objc private func backButtonTapped() {
+        dismiss(animated: true)
     }
 } 

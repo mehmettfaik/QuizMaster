@@ -1,0 +1,196 @@
+// Common
+"settings" = "Settings";
+"language" = "Language";
+"english" = "English";
+"turkish" = "Turkish";
+"cancel" = "Cancel";
+"close" = "Close";
+"save" = "Save";
+"ok" = "OK";
+"success" = "Success";
+"error" = "Error";
+"delete" = "Delete";
+"change" = "Change";
+"accept" = "Accept";
+"decline" = "Decline";
+
+// Navigation
+"profile" = "Profile";
+"appearance" = "Appearance";
+"notifications" = "Notifications";
+"account" = "Account";
+
+// Home
+"good_morning" = "GOOD MORNING ☀️";
+"good_afternoon" = "GOOD AFTERNOON ⛅️";
+"good_evening" = "GOOD EVENING 🌅";
+"good_night" = "GOOD NIGHT 🌙";
+"quiz_categories" = "Quiz Categories";
+"ask_ai" = "Ask QuizGPT";
+"ai_description" = "Our artificial intelligence knows everything, you should still try your luck!";
+
+// Categories
+"vehicle" = "Vehicle";
+"science" = "Science";
+"sports" = "Sports";
+"history" = "History";
+"art" = "Art";
+"celebrity" = "Celebrity";
+"video_games" = "Video Games";
+"general_culture" = "General Culture";
+"animals" = "Animals";
+"computer_science" = "Computer Science";
+"mathematics" = "Mathematics";
+"mythology" = "Mythology";
+"other" = "Other";
+
+// Stats
+"statistics" = "Statistics";
+"leaderboard" = "Leaderboard";
+"points" = "Points";
+"quizzes" = "QUIZZES";
+"world_rank" = "WORLD RANK";
+"this_week" = "This Week";
+"this_month" = "This Month";
+"all_time" = "All Time";
+"success_rates" = "Success Rates (%)";
+"details" = "Details";
+"correct" = "Correct";
+"wrong" = "Wrong";
+"score" = "Score";
+"stats_warning" = "You need to complete a quiz to view your stats";
+
+// Search
+"search" = "Search...";
+"categories" = "Categories";
+"favorites" = "Favorites";
+"top_quiz" = "Top Quiz";
+"no_results" = "No Results Found";
+
+// Add Question
+"add_new_question" = "Add New Question";
+"category" = "Category";
+"difficulty" = "Difficulty";
+"easy" = "Easy";
+"medium" = "Medium";
+"hard" = "Hard";
+"question" = "Question";
+"options" = "Options";
+"option" = "Option";
+"save_question" = "Save Question";
+"saving" = "Saving...";
+"fill_all_fields" = "Please fill in all fields";
+"fill_all_options" = "Please fill in all options";
+"select_correct_answer" = "Please select the correct answer";
+"question_added_successfully" = "Question added successfully";
+
+// Difficulty
+"choose_challenge" = "Choose your challenge level";
+"perfect_for_beginners" = "Perfect for beginners";
+"for_experienced" = "For experienced players";
+"test_expertise" = "Test your expertise";
+
+// Settings
+"change_avatar" = "Change Avatar";
+"change_name" = "Change Name";
+"theme" = "Theme";
+"quiz_reminders" = "Quiz Reminders";
+"special_offers" = "Special Offers";
+"change_password" = "Change Password";
+"delete_account" = "Delete Account";
+"logout" = "Logout";
+"select_avatar" = "Select Avatar";
+"select_character" = "Select your character";
+"enter_new_name" = "Enter your new name";
+"new_name" = "Your new name";
+"select_theme" = "Select Theme";
+"light_theme" = "Light Theme";
+"dark_theme" = "Dark Theme";
+"system_theme" = "System Theme";
+"avatar_updated" = "Your avatar has been updated successfully.";
+"name_updated" = "Your name has been updated successfully.";
+"current_password" = "Current password";
+"new_password" = "New password";
+"confirm_new_password" = "Confirm new password";
+"enter_new_password" = "Enter your new password";
+"password_fields_error" = "Please fill in all fields and make sure passwords match.";
+"password_updated" = "Your password has been updated successfully.";
+"enter_password" = "Enter your password";
+"delete_account_confirmation" = "Are you sure you want to delete your account? This action cannot be undone.";
+"logout_confirmation" = "Are you sure you want to log out?";
+"quiz_reminders_settings_message" = "You will be redirected to settings to enable/disable quiz reminders.";
+"special_offers_settings_message" = "You will be redirected to settings to enable/disable special offer notifications.";
+"go_to_settings" = "Go to Settings";
+
+// Auth
+"login" = "Login";
+"signup" = "Sign Up";
+"email" = "Email";
+"password" = "Password";
+"password_6_characters" = "Password must be at least 6 characters";
+
+// Profile
+"edit_profile" = "Edit Profile";
+"my_friends" = "My Friends";
+"achievements" = "Achievement Badges";
+"no_badges_yet" = "No Badges Yet";
+"earn_badges_message" = "Solve quizzes to earn badges!";
+"rookie" = "Rookie";
+"expert" = "Expert";
+"legend" = "Legend";
+"quiz_lover" = "Quiz Lover";
+"quiz_pro" = "Quiz Pro";
+"elite" = "Elite";
+
+
+// Game
+"game_invitation" = "Game Invitation";
+"game_invitation_message" = "%@ has invited you to play a quiz game!";
+
+// Quiz
+"start_quiz" = "Start Quiz";
+"next_question" = "Next Question";
+"finish_quiz" = "Finish Quiz";
+"your_score" = "Your Score";
+
+
+// FriendProfil
+"collect_100_points" = "Collect 100 Points";
+"collect_500_points" = "Collect 500 Points";
+"collect_1000_points" = "Collect 1000 Points";
+"complete_5_quizzes" = "Complete 5 Quizzes";
+"complete_20_quizzes" = "Complete 20 Quizzes";
+"reach_top_10" = "Reach Top 10";
+"point" = "Point";
+"achievement_progress" = "Progress";
+
+
+// Online
+"online_users" = "Online Users";
+"friend_warning" = "Currently, there are no users online in the app!";
+"online_button" = "Online";
+
+// FriendView
+"add_friend" = "Add Friend";
+"friend_requests" = "Friend Requests";
+"search_by_email" = "Search by Email... ";
+"no_results_yet" = "No results yet";
+"no_friends_yet" = "No friend yet";
+
+"error_title" = "Error";
+"success_title" = "Success";
+"ok_button" = "OK";
+"cancel_button" = "Cancel";
+"send_button" = "Send";
+"friend_request" = "Friend Request";
+"cant_send_request_to_self" = "You cannot send a friend request to yourself.";
+"friend_request_sent_success" = "Friend request has been sent.";
+"send_friend_request_confirmation" = "Do you want to send a friend request to %@?";
+"no_search_results_found" = "No Search Results Found";
+"no_pending_requests_found" = "No Pending Requests";
+
+
+"tab_home" = "Home";
+"tab_explore" = "Explore";
+"tab_statistics" = "Statistics";
+"tab_profile" = "Profile";

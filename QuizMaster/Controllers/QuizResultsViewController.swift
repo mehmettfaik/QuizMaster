@@ -105,7 +105,7 @@ class QuizResultsViewController: UIViewController {
     }
     
     private func updateUI() {
-        scoreLabel.text = "\(score) points"
+        scoreLabel.text = "\(score) \(LanguageManager.shared.localizedString(for: "point"))"
         
         let percentage = Double(score) / Double(totalQuestions * 10) * 100
         var description = ""

@@ -5,6 +5,7 @@ class FriendProfileViewController: UIViewController {
     private let userId: String
     private let db = Firestore.firestore()
     private var user: QuizMaster.User?
+    private var worldRank: Int = 0
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -255,12 +256,14 @@ class FriendProfileViewController: UIViewController {
                 quizzesPlayed: quizzesPlayed,
                 quizzesWon: quizzesWon,
                 language: data["language"] as? String ?? "tr",
-                categoryStats: [:]
+                categoryStats: [:],
+                isOnline: data["is_online"] as? Bool ?? false,
+                lastOnline: (data["last_online"] as? Timestamp)?.dateValue() ?? Date()
             )
             
             DispatchQueue.main.async {
                 self.nameLabel.text = name
-                self.pointsLabel.text = "\(totalPoints) Puan"
+                self.pointsLabel.text = String(format: "%d %@", totalPoints, LanguageManager.shared.localizedString(for: "point"))
                 
                 // Avatar ayarla
                 if let avatarType = Avatar(rawValue: avatar) {
@@ -286,7 +289,13 @@ class FriendProfileViewController: UIViewController {
                 
                 if let rank = documents.firstIndex(where: { $0.documentID == self?.userId }) {
                     DispatchQueue.main.async {
-                    self?.rankLabel.text = "Rank 🏆\(rank + 1)"
+                        self?.worldRank = rank + 1
+                        self?.rankLabel.text = "Rank 🏆\(rank + 1)"
+                        self?.calculateAchievements(
+                            quizzesPlayed: self?.user?.quizzesPlayed ?? 0,
+                            quizzesWon: self?.user?.quizzesWon ?? 0,
+                            totalPoints: self?.user?.totalPoints ?? 0
+                        )
                     }
                 }
             }
@@ -294,75 +303,71 @@ class FriendProfileViewController: UIViewController {
     
     private func calculateAchievements(quizzesPlayed: Int, quizzesWon: Int, totalPoints: Int) {
         var badges: [AchievementBadge] = [
-            // Quiz Completion Badges
+            // Points Badges
+            AchievementBadge(
+                id: "points_100",
+                title: LanguageManager.shared.localizedString(for: "rookie"),
+                description: LanguageManager.shared.localizedString(for: "collect_100_points"),
+                icon: "medal.fill",
+                isUnlocked: totalPoints >= 100,
+                progress: min(Double(totalPoints) / 100.0, 1.0),
+                requirement: 100,
+                currentValue: totalPoints
+            ),
+            AchievementBadge(
+                id: "points_500",
+                title: LanguageManager.shared.localizedString(for: "expert"),
+                description: LanguageManager.shared.localizedString(for: "collect_500_points"),
+                icon: "bolt.circle.fill",
+                isUnlocked: totalPoints >= 500,
+                progress: min(Double(totalPoints) / 500.0, 1.0),
+                requirement: 500,
+                currentValue: totalPoints
+            ),
+            AchievementBadge(
+                id: "points_1000",
+                title: LanguageManager.shared.localizedString(for: "legend"),
+                description: LanguageManager.shared.localizedString(for: "collect_1000_points"),
+                icon: "star.square.fill",
+                isUnlocked: totalPoints >= 1000,
+                progress: min(Double(totalPoints) / 1000.0, 1.0),
+                requirement: 1000,
+                currentValue: totalPoints
+            ),
+            
+            // Quiz Count Badges
             AchievementBadge(
                 id: "quiz_5",
-                title: "Çaylak",
-                description: "5 quiz tamamla",
-                icon: "star.fill",
+                title: LanguageManager.shared.localizedString(for: "quiz_lover"),
+                description: LanguageManager.shared.localizedString(for: "complete_5_quizzes"),
+                icon: "checkmark.circle.fill",
                 isUnlocked: quizzesPlayed >= 5,
                 progress: min(Double(quizzesPlayed) / 5.0, 1.0),
                 requirement: 5,
                 currentValue: quizzesPlayed
             ),
-            
-            AchievementBadge(
-                id: "quiz_10",
-                title: "Uzman",
-                description: "10 quiz tamamla",
-                icon: "star.circle.fill",
-                isUnlocked: quizzesPlayed >= 10,
-                progress: min(Double(quizzesPlayed) / 10.0, 1.0),
-                requirement: 10,
-                currentValue: quizzesPlayed
-            ),
-            
             AchievementBadge(
                 id: "quiz_20",
-                title: "Efsane",
-                description: "20 quiz tamamla",
-                icon: "star.square.fill",
+                title: LanguageManager.shared.localizedString(for: "quiz_pro"),
+                description: LanguageManager.shared.localizedString(for: "complete_20_quizzes"),
+                icon: "trophy.fill",
                 isUnlocked: quizzesPlayed >= 20,
                 progress: min(Double(quizzesPlayed) / 20.0, 1.0),
                 requirement: 20,
                 currentValue: quizzesPlayed
             ),
             
-            // Points Badges
+            // Rank Badge
             AchievementBadge(
-                id: "points_100",
-                title: "Quiz Sever",
-                description: "100 puan topla",
-                icon: "crown",
-                isUnlocked: totalPoints >= 100,
-                progress: min(Double(totalPoints) / 100.0, 1.0),
-                requirement: 100,
-                currentValue: totalPoints
-            ),
-            
-            AchievementBadge(
-                id: "points_500",
-                title: "Quiz Ustası",
-                description: "500 puan topla",
+                id: "rank_top_10",
+                title: LanguageManager.shared.localizedString(for: "elite"),
+                description: LanguageManager.shared.localizedString(for: "reach_top_10"),
                 icon: "crown.fill",
-                isUnlocked: totalPoints >= 500,
-                progress: min(Double(totalPoints) / 500.0, 1.0),
-                requirement: 500,
-                currentValue: totalPoints
-            ),
-            
-            // Win Badges
-            AchievementBadge(
-                id: "wins_5",
-                title: "Elit",
-                description: "5 quiz kazan",
-                icon: "trophy",
-                isUnlocked: quizzesWon >= 5,
-                progress: min(Double(quizzesWon) / 5.0, 1.0),
-                requirement: 5,
-                currentValue: quizzesWon
-            ),
-            
+                isUnlocked: worldRank <= 10,
+                progress: worldRank <= 10 ? 1.0 : 0.0,
+                requirement: 10,
+                currentValue: worldRank
+            )
         ]
         
         self.achievements = badges
@@ -403,10 +408,15 @@ extension FriendProfileViewController: UICollectionViewDelegate, UICollectionVie
         let achievement = achievements[indexPath.item]
         let alert = UIAlertController(
             title: achievement.title,
-            message: "\(achievement.description)\n\nİlerleme: \(achievement.currentValue)/\(achievement.requirement)",
+            message: """
+            \(achievement.description)
+
+            \(LanguageManager.shared.localizedString(for: "achievement_progress")): \(achievement.currentValue)/\(achievement.requirement)
+            """,
+
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+        alert.addAction(UIAlertAction(title: LanguageManager.shared.localizedString(for: "ok"), style: .default))
         present(alert, animated: true)
     }
 } 

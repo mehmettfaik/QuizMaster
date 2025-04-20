@@ -4,7 +4,9 @@ import FirebaseAuth
 
 class FriendsViewController: UIViewController {
     private let segmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: ["Arkadaş Ekle", "İstekler"])
+        let control = UISegmentedControl(items: [
+            LanguageManager.shared.localizedString(for: "add_friend"),
+            LanguageManager.shared.localizedString(for: "friend_requests"),])
         control.selectedSegmentIndex = 0
         control.backgroundColor = .secondaryPurple.withAlphaComponent(0.1)
         control.selectedSegmentTintColor = .primaryPurple
@@ -16,7 +18,7 @@ class FriendsViewController: UIViewController {
     
     private let searchBar: UISearchBar = {
         let searchBar = UISearchBar()
-        searchBar.placeholder = "Email ile ara..."
+        searchBar.placeholder = LanguageManager.shared.localizedString(for: "search_by_email")
         searchBar.searchBarStyle = .minimal
         searchBar.searchTextField.backgroundColor = .white
         searchBar.searchTextField.autocapitalizationType = .none // İlk harfi küçük başlat
@@ -38,7 +40,7 @@ class FriendsViewController: UIViewController {
     
     private let emptyStateLabel: UILabel = {
         let label = UILabel()
-        label.text = "Henüz bir sonuç yok"
+        label.text = LanguageManager.shared.localizedString(for: "no_results_yet")
         label.textColor = .gray
         label.font = .systemFont(ofSize: 16)
         label.textAlignment = .center
@@ -64,7 +66,7 @@ class FriendsViewController: UIViewController {
     
     private func setupUI() {
         view.backgroundColor = UIColor(red: 0.96, green: 0.96, blue: 0.98, alpha: 1.0)
-        title = "Arkadaşlar"
+        title = LanguageManager.shared.localizedString(for: "my_friends")
         
         view.addSubview(segmentedControl)
         view.addSubview(searchBar)
@@ -268,9 +270,11 @@ class FriendsViewController: UIViewController {
     private func sendFriendRequest(to user: FriendUser) {
         guard let currentUser = Auth.auth().currentUser else { return }
         
-        // Kendine arkadaşlık isteği göndermeyi engelle
         guard user.id != currentUser.uid else {
-            showAlert(title: "Hata", message: "Kendinize arkadaşlık isteği gönderemezsiniz.")
+            showAlert(
+                title: LanguageManager.shared.localizedString(for: "error_title"),
+                message: LanguageManager.shared.localizedString(for: "cant_send_request_to_self")
+            )
             return
         }
         
@@ -288,7 +292,10 @@ class FriendsViewController: UIViewController {
                 print("Error sending friend request: \(error)")
             } else {
                 DispatchQueue.main.async {
-                    self?.showAlert(title: "Başarılı", message: "Arkadaşlık isteği gönderildi.")
+                    self?.showAlert(
+                        title: LanguageManager.shared.localizedString(for: "success_title"),
+                        message: LanguageManager.shared.localizedString(for: "friend_request_sent_success")
+                    )
                 }
             }
         }
@@ -325,7 +332,10 @@ class FriendsViewController: UIViewController {
     
     private func showAlert(title: String, message: String) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Tamam", style: .default))
+        alert.addAction(UIAlertAction(
+            title: LanguageManager.shared.localizedString(for: "ok_button"),
+            style: .default
+        ))
         present(alert, animated: true)
     }
 }
@@ -380,12 +390,20 @@ extension FriendsViewController: UITableViewDelegate, UITableViewDataSource {
                 return
             }
             
-            let alert = UIAlertController(title: "Arkadaşlık İsteği",
-                                        message: "\(user.name) kullanıcısına arkadaşlık isteği göndermek istiyor musunuz?",
-                                        preferredStyle: .alert)
+            let alert = UIAlertController(
+                title: LanguageManager.shared.localizedString(for: "friend_request"),
+                message: String(format: LanguageManager.shared.localizedString(for: "send_friend_request_confirmation"), user.name),
+                preferredStyle: .alert
+            )
             
-            alert.addAction(UIAlertAction(title: "İptal", style: .cancel))
-            alert.addAction(UIAlertAction(title: "Gönder", style: .default) { [weak self] _ in
+            alert.addAction(UIAlertAction(
+                title: LanguageManager.shared.localizedString(for: "cancel_button"),
+                style: .cancel
+            ))
+            alert.addAction(UIAlertAction(
+                title: LanguageManager.shared.localizedString(for: "send_button"),
+                style: .default
+            ) { [weak self] _ in
                 self?.sendFriendRequest(to: user)
             })
             
@@ -400,10 +418,10 @@ extension FriendsViewController: UITableViewDelegate, UITableViewDataSource {
     private func updateEmptyState() {
         if segmentedControl.selectedSegmentIndex == 0 {
             emptyStateLabel.isHidden = !users.isEmpty
-            emptyStateLabel.text = "Arama sonucu bulunamadı"
+            emptyStateLabel.text = LanguageManager.shared.localizedString(for: "no_search_results_found")
         } else {
             emptyStateLabel.isHidden = !friendRequests.isEmpty
-            emptyStateLabel.text = "Bekleyen istek yok"
+            emptyStateLabel.text = LanguageManager.shared.localizedString(for: "no_pending_requests_found")
         }
     }
 } 

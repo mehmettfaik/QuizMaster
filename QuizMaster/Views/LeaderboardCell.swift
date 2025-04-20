@@ -135,7 +135,7 @@ class LeaderboardCell: UITableViewCell {
         }
         
         nameLabel.text = user.name
-        pointsLabel.text = "\(user.totalPoints) points"
+        pointsLabel.text = "\(user.totalPoints) \(LanguageManager.shared.localizedString(for: "points"))"
         
         // İsim uzunluğuna göre font boyutunu ayarla
         let maxWidth = containerView.frame.width - 250 // Avatar, rank, points ve trend için boşluk bırak

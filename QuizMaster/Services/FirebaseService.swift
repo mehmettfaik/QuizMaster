@@ -60,7 +60,9 @@ class FirebaseService {
                     quizzesPlayed: 0,
                     quizzesWon: 0,
                     language: "tr",
-                    categoryStats: [:]
+                    categoryStats: [:],
+                    isOnline: true,
+                    lastOnline: Date()
                 )
                 completion(.success(user))
             }
@@ -198,7 +200,9 @@ class FirebaseService {
                                 quizzesPlayed: 0,
                                 quizzesWon: 0,
                                 language: "tr",
-                                categoryStats: [:]
+                                categoryStats: [:],
+                                isOnline: true,
+                                lastOnline: Date()
                             )
                             completion(.success(user))
                         }

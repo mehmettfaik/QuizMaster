@@ -5,18 +5,18 @@ class SearchViewController: UIViewController {
     private let quizListViewModel = QuizListViewModel()
     
     private let categories: [(title: String, icon: String)] = [
-        ("Vehicle", "car.fill"),
-        ("Science", "atom"),
-        ("Sports", "sportscourt.fill"),
-        ("History", "book.fill"),
-        ("Art", "paintpalette.fill"),
-        ("Celebrity", "star.fill"),
-        ("Video Games", "gamecontroller.fill"),
-        ("General Culture", "globe"),
-        ("Animals", "pawprint.fill"),
-        ("Computer Science", "desktopcomputer"),
-        ("Mathematics", "function"),
-        ("Mythology", "building.columns.fill")
+        (LanguageManager.shared.localizedString(for: "vehicle"), "car.fill"),
+        (LanguageManager.shared.localizedString(for: "science"), "atom"),
+        (LanguageManager.shared.localizedString(for: "sports"), "sportscourt.fill"),
+        (LanguageManager.shared.localizedString(for: "history"), "book.fill"),
+        (LanguageManager.shared.localizedString(for: "art"), "paintpalette.fill"),
+        (LanguageManager.shared.localizedString(for: "celebrity"), "star.fill"),
+        (LanguageManager.shared.localizedString(for: "video_games"), "gamecontroller.fill"),
+        (LanguageManager.shared.localizedString(for: "general_culture"), "globe"),
+        (LanguageManager.shared.localizedString(for: "animals"), "pawprint.fill"),
+        (LanguageManager.shared.localizedString(for: "computer_science"), "desktopcomputer"),
+        (LanguageManager.shared.localizedString(for: "mathematics"), "function"),
+        (LanguageManager.shared.localizedString(for: "mythology"), "building.columns.fill")
     ]
     
     private var favoriteCategories: Set<String> = Set()
@@ -32,7 +32,7 @@ class SearchViewController: UIViewController {
     
     private let searchBar: UISearchBar = {
         let searchBar = UISearchBar()
-        searchBar.placeholder = "Search..."
+        searchBar.placeholder = LanguageManager.shared.localizedString(for: "search")
         searchBar.searchBarStyle = .minimal
         searchBar.backgroundColor = .clear
         searchBar.searchTextField.backgroundColor = .white
@@ -44,7 +44,11 @@ class SearchViewController: UIViewController {
     }()
     
     public let segmentedControl: UISegmentedControl = {
-        let items = ["Categories", "Favorites", "Top Quiz"]
+        let items = [
+            LanguageManager.shared.localizedString(for: "categories"),
+            LanguageManager.shared.localizedString(for: "favorites"),
+            LanguageManager.shared.localizedString(for: "top_quiz")
+        ]
         let control = UISegmentedControl(items: items)
         control.selectedSegmentIndex = 0
         control.selectedSegmentTintColor = .white
@@ -76,7 +80,7 @@ class SearchViewController: UIViewController {
     
     private let noResultsLabel: UILabel = {
         let label = UILabel()
-        label.text = "No Results Found"
+        label.text = LanguageManager.shared.localizedString(for: "no_results")
         label.font = .systemFont(ofSize: 18, weight: .medium)
         label.textColor = .gray
         label.textAlignment = .center
@@ -86,10 +90,10 @@ class SearchViewController: UIViewController {
     }()
     
     private let topQuizCategories = [
-        ("Computer Science", "desktopcomputer"),
-        ("General Culture", "globe"),
-        ("Art", "paintpalette.fill"),
-        ("Celebrity", "star.fill")
+        (LanguageManager.shared.localizedString(for: "computer_science"), "desktopcomputer"),
+        (LanguageManager.shared.localizedString(for: "general_culture"), "globe"),
+        (LanguageManager.shared.localizedString(for: "art"), "paintpalette.fill"),
+        (LanguageManager.shared.localizedString(for: "celebrity"), "star.fill")
     ]
     
     override func viewDidLoad() {

@@ -9,7 +9,10 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
     private var cancellables = Set<AnyCancellable>()
     
     private let segmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: ["İstatistikler", "Liderlik Tablosu"])
+        let control = UISegmentedControl(items: [
+            LanguageManager.shared.localizedString(for: "statistics"),
+            LanguageManager.shared.localizedString(for: "leaderboard")
+        ])
         control.selectedSegmentIndex = 0
         control.translatesAutoresizingMaskIntoConstraints = false
         
@@ -49,7 +52,11 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
     }()
     
     private let timeFilterControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: ["Bu Hafta", "Bu Ay", "Tüm Zamanlar"])
+        let control = UISegmentedControl(items: [
+            LanguageManager.shared.localizedString(for: "this_week"),
+            LanguageManager.shared.localizedString(for: "this_month"),
+            LanguageManager.shared.localizedString(for: "all_time")
+        ])
         control.selectedSegmentIndex = 0
         control.translatesAutoresizingMaskIntoConstraints = false
         
@@ -97,14 +104,14 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
     }()
     
     private let pointsLabel: UILabel = {
-            let label = UILabel()
-            label.text = "POINTS"
-            label.font = .systemFont(ofSize: 14)
-            label.textColor = .white
-            label.textAlignment = .center
-            label.translatesAutoresizingMaskIntoConstraints = false
-            return label
-        }()
+        let label = UILabel()
+        label.text = LanguageManager.shared.localizedString(for: "points").uppercased()
+        label.font = .systemFont(ofSize: 14)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
     
     private let pointsValueLabel: UILabel = {
             let label = UILabel()
@@ -117,14 +124,14 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         }()
     
     private let quizzesLabel: UILabel = {
-            let label = UILabel()
-            label.text = "QUIZZES"
-            label.font = .systemFont(ofSize: 14)
-            label.textColor = .white
-            label.textAlignment = .center
-            label.translatesAutoresizingMaskIntoConstraints = false
-            return label
-        }()
+        let label = UILabel()
+        label.text = LanguageManager.shared.localizedString(for: "quizzes").uppercased()
+        label.font = .systemFont(ofSize: 14)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
     
     private let quizzesValueLabel: UILabel = {
             let label = UILabel()
@@ -137,14 +144,14 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         }()
     
     private let rankLabel: UILabel = {
-            let label = UILabel()
-            label.text = "WORLD RANK"
-            label.font = .systemFont(ofSize: 14)
-            label.textColor = .white
-            label.textAlignment = .center
-            label.translatesAutoresizingMaskIntoConstraints = false
-            return label
-        }()
+        let label = UILabel()
+        label.text = LanguageManager.shared.localizedString(for: "world_rank").uppercased()
+        label.font = .systemFont(ofSize: 14)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
     
     private let rankValueLabel: UILabel = {
             let label = UILabel()
@@ -170,6 +177,34 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         view.layer.cornerRadius = 20
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
+    }()
+    
+    private let noDataView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        view.isHidden = true
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private let noDataImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(systemName: "chart.bar.xaxis")
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .primaryPurple
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
+    }()
+    
+    private let noDataLabel: UILabel = {
+        let label = UILabel()
+        label.text = LanguageManager.shared.localizedString(for: "stats_warning")
+        label.textColor = .darkGray
+        label.font = .systemFont(ofSize: 16)
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
     }()
     
     private let pieChartView: PieChartView = {
@@ -255,8 +290,12 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         // Add loading indicator to the main view so it's always visible
         view.addSubview(loadingIndicator)
         
-        // Add stats view to the content view (scrollable area)
+        // Add stats view and no data view to the content view
         contentView.addSubview(statsView)
+        contentView.addSubview(noDataView)
+        noDataView.addSubview(noDataImageView)
+        noDataView.addSubview(noDataLabel)
+        
         statsView.addSubview(pieChartView)
         statsView.addSubview(categoryLabel)
         statsView.addSubview(lineChartView)
@@ -394,7 +433,23 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
             lineChartView.leadingAnchor.constraint(equalTo: statsView.leadingAnchor, constant: 20),
             lineChartView.trailingAnchor.constraint(equalTo: statsView.trailingAnchor, constant: -20),
             lineChartView.heightAnchor.constraint(equalToConstant: 200),
-            lineChartView.bottomAnchor.constraint(lessThanOrEqualTo: statsView.bottomAnchor, constant: -20)
+            lineChartView.bottomAnchor.constraint(lessThanOrEqualTo: statsView.bottomAnchor, constant: -20),
+            
+            // No Data View constraints
+            noDataView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: -200),
+            noDataView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            noDataView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            noDataView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20),
+            
+            noDataImageView.centerXAnchor.constraint(equalTo: noDataView.centerXAnchor),
+            noDataImageView.centerYAnchor.constraint(equalTo: noDataView.centerYAnchor, constant: -40),
+            noDataImageView.widthAnchor.constraint(equalToConstant: 80),
+            noDataImageView.heightAnchor.constraint(equalToConstant: 80),
+            
+            noDataLabel.topAnchor.constraint(equalTo: noDataImageView.bottomAnchor, constant: 20),
+            noDataLabel.leadingAnchor.constraint(equalTo: noDataView.leadingAnchor, constant: 20),
+            noDataLabel.trailingAnchor.constraint(equalTo: noDataView.trailingAnchor, constant: -20),
+            noDataLabel.centerXAnchor.constraint(equalTo: noDataView.centerXAnchor),
         ])
         
         // Set a height constraint for the content view based on the statsView
@@ -404,10 +459,12 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
     }
     
     @objc private func segmentedControlValueChanged() {
-        statsView.isHidden = segmentedControl.selectedSegmentIndex == 1
-        leaderboardView.isHidden = segmentedControl.selectedSegmentIndex == 0
+        let isLeaderboardSelected = segmentedControl.selectedSegmentIndex == 1
+        statsView.isHidden = isLeaderboardSelected
+        leaderboardView.isHidden = !isLeaderboardSelected
+        noDataView.isHidden = isLeaderboardSelected
         
-        if segmentedControl.selectedSegmentIndex == 1 {
+        if isLeaderboardSelected {
             loadLeaderboard()
         }
     }
@@ -416,6 +473,16 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         loadLeaderboard()
     }
     
+    private func showLeaderboardError(_ error: Error) {
+        let alert = UIAlertController(
+            title: LanguageManager.shared.localizedString(for: "error"),
+            message: String(format: LanguageManager.shared.localizedString(for: "leaderboard_error"), error.localizedDescription),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: LanguageManager.shared.localizedString(for: "ok"), style: .default))
+        present(alert, animated: true)
+    }
+
     private func loadLeaderboard() {
         loadingIndicator.startAnimating()
         
@@ -431,14 +498,7 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
                     self.updateTopThreeCards()
                     self.leaderboardTableView.reloadData()
                 case .failure(let error):
-                    // Show error alert
-                    let alert = UIAlertController(
-                        title: "Hata",
-                        message: "Liderlik tablosu yüklenirken bir hata oluştu: \(error.localizedDescription)",
-                        preferredStyle: .alert
-                    )
-                    alert.addAction(UIAlertAction(title: "Tamam", style: .default))
-                    self.present(alert, animated: true)
+                    self.showLeaderboardError(error)
                 }
             }
         }
@@ -479,6 +539,13 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         legend.yEntrySpace = 0
         legend.yOffset = 0
         legend.font = UIFont.systemFont(ofSize: 15)
+        
+        let xAxis = lineChartView.xAxis
+        xAxis.valueFormatter = IndexAxisValueFormatter(values: [
+            LanguageManager.shared.localizedString(for: "correct"),
+            LanguageManager.shared.localizedString(for: "wrong"),
+            LanguageManager.shared.localizedString(for: "points")
+        ])
     }
     
     private func setupLineChart() {
@@ -495,7 +562,11 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         xAxis.labelPosition = .bottom
         xAxis.labelTextColor = .black
         xAxis.drawGridLinesEnabled = false
-        xAxis.valueFormatter = IndexAxisValueFormatter(values: ["Doğru", "Yanlış", "Puan"])
+        xAxis.valueFormatter = IndexAxisValueFormatter(values: [
+            LanguageManager.shared.localizedString(for: "correct"),
+            LanguageManager.shared.localizedString(for: "wrong"),
+            LanguageManager.shared.localizedString(for: "points")
+        ])
         xAxis.granularity = 1
     }
     
@@ -510,7 +581,7 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
             }
         }
         
-        let dataSet = PieChartDataSet(entries: entries, label: "Başarı Oranları (%)")
+        let dataSet = PieChartDataSet(entries: entries, label: LanguageManager.shared.localizedString(for: "success_rates"))
         
         // Özel renkler tanımla
         dataSet.colors = [
@@ -539,7 +610,7 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
     }
     
     private func updateLineChart(for category: String, stats: CategoryStats) {
-        categoryLabel.text = "\(category) Detayları"
+        categoryLabel.text = String(format: LanguageManager.shared.localizedString(for: "category_details"), category)
         categoryLabel.isHidden = false
         lineChartView.isHidden = false
         
@@ -627,7 +698,7 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
             .receive(on: DispatchQueue.main)
             .sink { [weak self] error in
                 if let error = error {
-                    self?.showErrorAlert(error)
+                    self?.showLeaderboardError(error)
                 }
             }
             .store(in: &cancellables)
@@ -636,6 +707,9 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
             .receive(on: DispatchQueue.main)
             .sink { [weak self] quizzes in
                 self?.quizzesValueLabel.text = "\(quizzes)"
+                // Eğer quiz çözülmemişse noDataView'ı göster, statsView'ı gizle
+                self?.noDataView.isHidden = quizzes > 0
+                self?.statsView.isHidden = quizzes == 0
             }
             .store(in: &cancellables)
     }
@@ -751,7 +825,7 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
             }
             
             if let pointsLabel = cardView.viewWithTag(rank * 1000 + 4) as? UILabel {
-                pointsLabel.text = "\(user.totalPoints) points"
+                pointsLabel.text = String(format: "%d %@", user.totalPoints, LanguageManager.shared.localizedString(for: "points"))
             }
         }
     }

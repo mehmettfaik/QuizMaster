@@ -33,7 +33,7 @@ class FriendsListViewController: UIViewController {
     
     private let emptyStateLabel: UILabel = {
         let label = UILabel()
-        label.text = "Henüz arkadaşınız bulunmuyor"
+        label.text = LanguageManager.shared.localizedString(for: "no_friends_yet")
         label.font = .systemFont(ofSize: 16)
         label.textColor = .gray
         label.textAlignment = .center
@@ -57,7 +57,7 @@ class FriendsListViewController: UIViewController {
     }
     
     private func setupUI() {
-        title = "Arkadaşlarım"
+        title = LanguageManager.shared.localizedString(for: "my_friends")
         view.backgroundColor = .systemGroupedBackground
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(
@@ -158,6 +158,7 @@ class FriendsListViewController: UIViewController {
     private func updateEmptyState(isEmpty: Bool) {
         emptyStateView.isHidden = !isEmpty
         tableView.isHidden = isEmpty
+        emptyStateLabel.text = LanguageManager.shared.localizedString(for: "no_friends_yet")
     }
     
     @objc private func addFriendTapped() {
@@ -274,7 +275,7 @@ class FriendCell: UITableViewCell {
             from: NSNumber(value: user.totalPoints),
             number: .decimal
         )
-        pointsLabel.text = "\(formattedPoints) Puan"
+        pointsLabel.text = String(format: "%@ %@", formattedPoints, LanguageManager.shared.localizedString(for: "point"))
         
         if let avatarType = Avatar(rawValue: user.avatar) {
             avatarImageView.image = avatarType.image

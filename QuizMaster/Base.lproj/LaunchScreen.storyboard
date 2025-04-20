@@ -1,8 +1,10 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="13122.16" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="13104.12"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -11,10 +13,57 @@
             <objects>
                 <viewController id="01J-lp-oVM" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" xcode11CocoaTouchSystemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="bgV-gr-view">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                                <color key="backgroundColor" red="0.54901963470000004" green="0.40784314269999999" blue="0.89803922179999995" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                            </view>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="quiz_logo" translatesAutoresizingMaskIntoConstraints="NO" id="logo-img">
+                                <rect key="frame" x="96.666666666666671" y="236" width="199.66666666666663" height="200"/>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="QuizMaster" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="app-name">
+                                <rect key="frame" x="20" y="456" width="353" height="43"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="43" id="9yB-0N-a3p"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="36"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Test Your Knowledge" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tagline">
+                                <rect key="frame" x="20" y="517" width="353" height="21"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="21" id="4ft-8j-xB3"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="17"/>
+                                <color key="textColor" white="1" alpha="0.80000000000000004" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                        </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="logo-img" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="177" id="E0Y-zL-F4c"/>
+                            <constraint firstItem="bgV-gr-view" firstAttribute="centerX" secondItem="tagline" secondAttribute="centerX" id="Hn8-Iw-Xj6"/>
+                            <constraint firstItem="logo-img" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="96.666666666666686" id="MLv-tD-vhq"/>
+                            <constraint firstItem="bgV-gr-view" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="topMargin" constant="-59" id="NKa-l8-qgf"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="tagline" secondAttribute="bottom" constant="280" id="NOv-KZ-JPq"/>
+                            <constraint firstAttribute="bottom" secondItem="bgV-gr-view" secondAttribute="bottom" constant="-5" id="QWR-c3-A2x"/>
+                            <constraint firstItem="app-name" firstAttribute="top" secondItem="logo-img" secondAttribute="bottom" constant="20" id="V32-gn-Pg0"/>
+                            <constraint firstItem="app-name" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="Xsn-SN-yJH"/>
+                            <constraint firstItem="bgV-gr-view" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="bH9-9Y-HHr"/>
+                            <constraint firstItem="bgV-gr-view" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="bU3-yq-2QT"/>
+                            <constraint firstItem="app-name" firstAttribute="leading" secondItem="tagline" secondAttribute="leading" id="dbY-bT-itw"/>
+                            <constraint firstItem="app-name" firstAttribute="trailing" secondItem="tagline" secondAttribute="trailing" id="dde-pE-ErC"/>
+                            <constraint firstItem="logo-img" firstAttribute="centerX" secondItem="app-name" secondAttribute="centerX" id="gbx-hq-otb"/>
+                            <constraint firstItem="bgV-gr-view" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" constant="-5" id="gvX-uY-JdR"/>
+                            <constraint firstItem="bgV-gr-view" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="keK-YL-azL"/>
+                            <constraint firstItem="bgV-gr-view" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="nsI-w5-i2v"/>
+                            <constraint firstItem="tagline" firstAttribute="top" secondItem="app-name" secondAttribute="bottom" constant="18" id="xTL-2H-JgP"/>
+                            <constraint firstItem="bgV-gr-view" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="yrK-4f-FLi"/>
+                        </constraints>
                     </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -22,4 +71,10 @@
             <point key="canvasLocation" x="53" y="375"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="quiz_logo" width="1024" height="1024"/>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
 </document>

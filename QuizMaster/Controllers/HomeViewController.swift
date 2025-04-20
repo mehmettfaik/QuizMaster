@@ -94,11 +94,11 @@ class HomeViewController: UIViewController {
     
     private let aiDescriptionLabel: UILabel = {
         let label = UILabel()
-        label.text = "Our artificial intelligence knows everything, you should still try your luck :)"
+        label.text = LanguageManager.shared.localizedString(for: "ai_description")
         label.numberOfLines = 3
         label.textColor = UIColor(white: 1.0, alpha: 0.85) // Beyaz ama çok hafif opak
-        label.textAlignment = .center
-        label.font = .systemFont(ofSize: 18, weight: .medium) // Başlık ile uyumlu font
+        label.textAlignment = .left
+        label.font = .systemFont(ofSize: 16, weight: .medium) // Başlık ile uyumlu font
         label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
@@ -115,7 +115,7 @@ class HomeViewController: UIViewController {
     
     private let askAIButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Ask AI", for: .normal)
+        button.setTitle(LanguageManager.shared.localizedString(for: "ask_ai"), for: .normal)
         button.backgroundColor = .white
         button.setTitleColor(.primaryPurple, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
@@ -126,7 +126,7 @@ class HomeViewController: UIViewController {
     
     private let categoriesLabel: UILabel = {
         let label = UILabel()
-        label.text = "Quiz Categories"
+        label.text = LanguageManager.shared.localizedString(for: "quiz_categories")
         label.font = .systemFont(ofSize: 24, weight: .bold)
         label.textColor = .black
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -147,12 +147,12 @@ class HomeViewController: UIViewController {
     }()
     
     private let categories: [(title: String, icon: String, questions: Int)] = [
-        ("Vehicle", "🚗", 50),
-        ("Science", "🔬", 30),
-        ("Sports", "⚽️", 95),
-        ("History", "🏛️", 128),
-        ("Art", "🎨", 30),
-        ("Diğer", "⏩", 24)
+        (LanguageManager.shared.localizedString(for: "vehicle"), "🚗", 50),
+        (LanguageManager.shared.localizedString(for: "science"), "🔬", 30),
+        (LanguageManager.shared.localizedString(for: "sports"), "⚽️", 95),
+        (LanguageManager.shared.localizedString(for: "history"), "🏛️", 128),
+        (LanguageManager.shared.localizedString(for: "art"), "🎨", 30),
+        (LanguageManager.shared.localizedString(for: "other"), "⏩", 24)
     ]
     
     override func viewDidLoad() {
@@ -269,8 +269,8 @@ class HomeViewController: UIViewController {
             
             aiImageView.centerYAnchor.constraint(equalTo: aiCard.centerYAnchor),
             aiImageView.trailingAnchor.constraint(equalTo: aiCard.trailingAnchor, constant: -20),
-            aiImageView.widthAnchor.constraint(equalToConstant: 80),
-            aiImageView.heightAnchor.constraint(equalToConstant: 80),
+            aiImageView.widthAnchor.constraint(equalToConstant: 120),
+            aiImageView.heightAnchor.constraint(equalToConstant: 120),
             
             askAIButton.topAnchor.constraint(equalTo: aiDescriptionLabel.bottomAnchor, constant: 16),
             askAIButton.leadingAnchor.constraint(equalTo: aiCard.leadingAnchor, constant: 20),
@@ -312,13 +312,13 @@ class HomeViewController: UIViewController {
         
         switch hour {
         case 6..<12:
-            greeting = "GOOD MORNING ☀️"
+            greeting = LanguageManager.shared.localizedString(for: "good_morning")
         case 12..<17:
-            greeting = "GOOD AFTERNOON ⛅️ "
+            greeting = LanguageManager.shared.localizedString(for: "good_afternoon")
         case 17..<22:
-            greeting = "GOOD EVENING 🌅"
+            greeting = LanguageManager.shared.localizedString(for: "good_evening")
         default:
-            greeting = "GOOD NIGHT 🌙"
+            greeting = LanguageManager.shared.localizedString(for: "good_night")
         }
         
         greetingLabel.text = greeting
@@ -361,7 +361,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let category = categories[indexPath.item]
         
-        if category.title == "Diğer" {
+        if category.title == "Other" {
             if let cell = collectionView.cellForItem(at: indexPath) as? CategoryCell {
                 cell.triggerShakeAnimation()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {

@@ -23,6 +23,9 @@ struct User: Codable {
     var quizzesWon: Int
     var language: String
     var categoryStats: [String: CategoryStats]
+    var isOnline: Bool
+    var lastOnline: Date
+    var activeGameId: String?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -34,6 +37,9 @@ struct User: Codable {
         case quizzesWon = "quizzes_won"
         case language
         case categoryStats = "category_stats"
+        case isOnline = "is_online"
+        case lastOnline = "last_online"
+        case activeGameId = "active_game_id"
     }
     
     static func from(_ document: DocumentSnapshot) -> User? {
@@ -50,6 +56,8 @@ struct User: Codable {
             }
         }
         
+        let lastOnlineTimestamp = data["last_online"] as? Timestamp
+        
         return User(
             id: document.documentID,
             email: data["email"] as? String ?? "",
@@ -59,7 +67,10 @@ struct User: Codable {
             quizzesPlayed: data["quizzes_played"] as? Int ?? 0,
             quizzesWon: data["quizzes_won"] as? Int ?? 0,
             language: data["language"] as? String ?? "en",
-            categoryStats: categoryStats
+            categoryStats: categoryStats,
+            isOnline: data["is_online"] as? Bool ?? false,
+            lastOnline: lastOnlineTimestamp?.dateValue() ?? Date(),
+            activeGameId: data["active_game_id"] as? String
         )
     }
 } 

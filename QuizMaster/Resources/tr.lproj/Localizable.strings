@@ -171,6 +171,14 @@
 "online_users" = "Online Kullanıcılar";
 "friend_warning" = "Şu anda uygulamadaki hiçbir kullanıcı çevrimiçi değil!";
 "online_button" = "Çevrimiçi";
+"online_quiz_over" = "Çevrimiçi Yarışma Bitti";
+"you_lost" = "Maalesef Kaybettiniz!";
+"you_win" = "Tebrikler Kazandınız!";
+"you_tie" = "Beraberlik! İyi Oynadın!";
+"correct_answer" = "Doğru: ";
+"wrong_answer" = "Yanlış: ";
+"online_point" = "Puan: ";
+"view_profile" = "View Profile";
 
 
 // FriendView

@@ -169,6 +169,14 @@
 "online_users" = "Online Users";
 "friend_warning" = "Currently, there are no users online in the app!";
 "online_button" = "Online";
+"online_quiz_over" = "Competition Completed";
+"you_lost" = "Unfortunately, You Lost!";
+"you_win" = "Congratulations, You Won!";
+"you_tie" = "It’s a Tie! Well Played!";
+"correct_answer" = "Correct: ";
+"wrong_answer" = "Wrong: ";
+"online_point" = "Point: ";
+"view_profile" = "View Profile";
 
 // FriendView
 "add_friend" = "Add Friend";

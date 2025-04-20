@@ -711,7 +711,7 @@ class MultiplayerGameViewController: UIViewController {
         
         // Title label with custom styling
         let titleLabel = UILabel()
-        titleLabel.text = "Online Quiz Bitti"
+        titleLabel.text = LanguageManager.shared.localizedString(for: "online_quiz_over")
         titleLabel.font = .systemFont(ofSize: 32, weight: .bold)
         titleLabel.textAlignment = .center
         titleLabel.textColor = .white
@@ -740,7 +740,7 @@ class MultiplayerGameViewController: UIViewController {
         
         // Modern profile button
         let profileButton = UIButton(type: .system)
-        profileButton.setTitle("Profili Görüntüle", for: .normal)
+        profileButton.setTitle(LanguageManager.shared.localizedString(for: "view_profile"), for: .normal)
         profileButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .bold)
         profileButton.backgroundColor = .white
         profileButton.setTitleColor(.primaryPurple, for: .normal)
@@ -858,11 +858,11 @@ class MultiplayerGameViewController: UIViewController {
         // Determine winner/loser status and emoji
         let (resultStatus, emoji) = {
             if currentPlayerScore > opponentScore {
-                return ("Tebrikler! Kazandınız!", "🏆")
+                return (LanguageManager.shared.localizedString(for: "you_win"), "🏆")
             } else if currentPlayerScore < opponentScore {
-                return ("Maalesef kaybettiniz.", "😔")
+                return (LanguageManager.shared.localizedString(for: "you_lost"), "😔")
             } else {
-                return ("Berabere kaldınız!", "🤝")
+                return (LanguageManager.shared.localizedString(for: "you_tie"), "🤝")
             }
         }()
         
@@ -871,20 +871,20 @@ class MultiplayerGameViewController: UIViewController {
         
         // Add current player stats
         resultText.append(NSAttributedString(string: "👤 " + currentPlayerName.uppercased() + "\n", attributes: playerNameAttributes))
-        resultText.append(NSAttributedString(string: "Puan: ", attributes: statsLabelAttributes))
+        resultText.append(NSAttributedString(string: LanguageManager.shared.localizedString(for: "online_point"), attributes: statsLabelAttributes))
         resultText.append(NSAttributedString(string: "\(currentPlayerScore) pts\n", attributes: statsValueAttributes))
-        resultText.append(NSAttributedString(string: "Doğru: ", attributes: statsLabelAttributes))
+        resultText.append(NSAttributedString(string: LanguageManager.shared.localizedString(for: "correct_answer"), attributes: statsLabelAttributes))
         resultText.append(NSAttributedString(string: "\(currentPlayerCorrect)\n", attributes: statsValueAttributes))
-        resultText.append(NSAttributedString(string: "Yanlış: ", attributes: statsLabelAttributes))
+        resultText.append(NSAttributedString(string: LanguageManager.shared.localizedString(for: "wrong_answer"), attributes: statsLabelAttributes))
         resultText.append(NSAttributedString(string: "\(currentPlayerWrong)\n\n", attributes: statsValueAttributes))
         
         // Add opponent stats
         resultText.append(NSAttributedString(string: "👤 " + opponentName.uppercased() + "\n", attributes: playerNameAttributes))
-        resultText.append(NSAttributedString(string: "Puan: ", attributes: statsLabelAttributes))
+        resultText.append(NSAttributedString(string: LanguageManager.shared.localizedString(for: "online_point"), attributes: statsLabelAttributes))
         resultText.append(NSAttributedString(string: "\(opponentScore) pts\n", attributes: statsValueAttributes))
-        resultText.append(NSAttributedString(string: "Doğru: ", attributes: statsLabelAttributes))
+        resultText.append(NSAttributedString(string: LanguageManager.shared.localizedString(for: "correct_answer"), attributes: statsLabelAttributes))
         resultText.append(NSAttributedString(string: "\(opponentCorrect)\n", attributes: statsValueAttributes))
-        resultText.append(NSAttributedString(string: "Yanlış: ", attributes: statsLabelAttributes))
+        resultText.append(NSAttributedString(string: LanguageManager.shared.localizedString(for: "wrong_answer"), attributes: statsLabelAttributes))
         resultText.append(NSAttributedString(string: "\(opponentWrong)", attributes: statsValueAttributes))
         
         return resultText

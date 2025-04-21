@@ -274,7 +274,7 @@ class MultiplayerGameService {
             // Convert category string to lowercase for Firestore path
             let categoryPath = category.lowercased().replacingOccurrences(of: " ", with: "")
             
-            print("📝 Loading questions for:")
+            print("📝 Loading questions for:") //categoryPath
             print("   Category: \(category)")
             print("   Category Path: \(categoryPath)")
             print("   Difficulty: \(difficulty)")

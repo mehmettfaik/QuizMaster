@@ -466,6 +466,9 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
         
         if isLeaderboardSelected {
             loadLeaderboard()
+        } else {
+            // Statistics sekmesine geri dönüldüğünde verileri yeniden yükle
+            viewModel.loadUserProfile()
         }
     }
     
@@ -610,7 +613,7 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
     }
     
     private func updateLineChart(for category: String, stats: CategoryStats) {
-        categoryLabel.text = String(format: LanguageManager.shared.localizedString(for: "category_details"), category)
+        categoryLabel.text = category
         categoryLabel.isHidden = false
         lineChartView.isHidden = false
         
@@ -829,4 +832,4 @@ class StatsViewController: UIViewController, ChartViewDelegate, UITableViewDeleg
             }
         }
     }
-} 
+}

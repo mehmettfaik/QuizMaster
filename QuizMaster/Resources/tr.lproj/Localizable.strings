@@ -146,7 +146,7 @@
 
 // Game
 "game_invitation" = "Oyun Davetiyesi";
-"game_invitation_message" = "%@ sizi bir bilgi yarışması oyunu oynamaya davet etti!";
+"game_invitation_message" = "sizi bir bilgi yarışması oyunu oynamaya davet etti!";
 
 // Quiz
 "start_quiz" = "Sınava Başla";
@@ -178,7 +178,9 @@
 "correct_answer" = "Doğru: ";
 "wrong_answer" = "Yanlış: ";
 "online_point" = "Puan: ";
-"view_profile" = "View Profile";
+"view_profile" = "Profile Dön";
+"game_invitation" = "Oyun Daveti";
+"online_game_waiting" = "%@ oyunu başlatması bekleniyor";
 
 
 // FriendView

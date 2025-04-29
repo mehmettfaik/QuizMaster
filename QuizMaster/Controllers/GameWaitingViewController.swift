@@ -121,7 +121,9 @@ class GameWaitingViewController: UIViewController {
             if game.creatorId == Auth.auth().currentUser?.uid {
                 statusLabel.text = "Game accepted! Select category and difficulty to start."
             } else {
-                statusLabel.text = "Waiting for \(game.creatorName) to start the game..."
+                let format = LanguageManager.shared.localizedString(for: "online_game_waiting")
+                statusLabel.text = String(format: format, game.creatorName)
+
             }
         case .pending:
             statusLabel.text = "Waiting for response..."
@@ -140,17 +142,17 @@ class GameWaitingViewController: UIViewController {
         isShowingInvitation = true
         
         let alert = UIAlertController(
-            title: "Game Invitation",
-            message: "\(game.creatorName) has invited you to play a quiz game!",
+            title: LanguageManager.shared.localizedString(for: "game_invitation"),
+            message: "\(game.creatorName) \(LanguageManager.shared.localizedString(for: "game_invitation_message"))",
             preferredStyle: .alert
         )
         
-        alert.addAction(UIAlertAction(title: "Accept", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: LanguageManager.shared.localizedString(for: "accept"), style: .default) { [weak self] _ in
             self?.isShowingInvitation = false
             self?.acceptInvitation(game)
         })
         
-        alert.addAction(UIAlertAction(title: "Decline", style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: LanguageManager.shared.localizedString(for: "decline"), style: .destructive) { [weak self] _ in
             self?.isShowingInvitation = false
             self?.declineInvitation(game)
         })

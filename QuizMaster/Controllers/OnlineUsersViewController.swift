@@ -178,19 +178,19 @@ class OnlineUsersViewController: UIViewController {
         // Prevent showing duplicate invitations
         guard presentedViewController == nil else { return }
         
-        let localizedText = LanguageManager.shared.localizedString(for: "key")
+        let localizedText = LanguageManager.shared.localizedString(for: "game_invitation")
         
         let alert = UIAlertController(
             title: localizedText,
-            message: "\(game.creatorName) has invited you to play a quiz game!",
+            message: "\(game.creatorName) \(LanguageManager.shared.localizedString(for: "game_invitation_message"))",
             preferredStyle: .alert
         )
         
-        alert.addAction(UIAlertAction(title: "Accept", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: LanguageManager.shared.localizedString(for: "accept"), style: .default) { [weak self] _ in
             self?.acceptGameInvitation(game)
         })
         
-        alert.addAction(UIAlertAction(title: "Decline", style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: LanguageManager.shared.localizedString(for: "decline"), style: .destructive) { [weak self] _ in
             self?.declineGameInvitation(game)
         })
         

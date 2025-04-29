@@ -145,7 +145,7 @@
 
 // Game
 "game_invitation" = "Game Invitation";
-"game_invitation_message" = "%@ has invited you to play a quiz game!";
+"game_invitation_message" = "has invited you to play a quiz game!";
 
 // Quiz
 "start_quiz" = "Start Quiz";
@@ -177,6 +177,9 @@
 "wrong_answer" = "Wrong: ";
 "online_point" = "Point: ";
 "view_profile" = "View Profile";
+"game_invitation" = "Game Invitation";
+"online_game_waiting" = "Waiting for %@ to start the game";
+
 
 // FriendView
 "add_friend" = "Add Friend";

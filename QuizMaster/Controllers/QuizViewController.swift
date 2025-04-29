@@ -366,6 +366,12 @@ class QuizViewController: UIViewController {
             
             gridContainer.addArrangedSubview(topRow)
             gridContainer.addArrangedSubview(bottomRow)
+            
+            // Make sure question container is properly sized and visible
+            questionContainer.isHidden = false
+            questionLabel.isHidden = false
+            
+            // Add the grid container after ensuring question visibility
             optionsStackView.addArrangedSubview(gridContainer)
             
             // Add options to grid with animation
@@ -403,7 +409,10 @@ class QuizViewController: UIViewController {
                 containerView.addSubview(imageView)
                 containerView.addSubview(button)
                 
+                // Add constraints to maintain aspect ratio for image options
                 NSLayoutConstraint.activate([
+                    containerView.heightAnchor.constraint(equalTo: containerView.widthAnchor),
+                    
                     imageView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 8),
                     imageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
                     imageView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -8),
@@ -687,4 +696,4 @@ extension UIColor {
         
         return UIColor(red: red, green: green, blue: blue, alpha: alpha)
     }
-} 
+}
